@@ -1,0 +1,24 @@
+use warnings;
+use strict;
+
+use Wifty::Widgets;
+use Template::Declare::Tags;
+
+
+print html {
+
+    head {
+        attr id   => 5;
+        attr name => "I hate you";
+    };
+    body {
+        for ( 1 .. 5 ) {
+            span { attr class => "bozo"; 'yyy' };
+        }
+        attr bgcolor => "#ffffff";
+        p {'xxx'};
+        Wifty::Widgets->login_widget();
+        }
+};
+
+1;
