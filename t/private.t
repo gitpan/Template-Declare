@@ -1,0 +1,62 @@
+use warnings;
+use strict;
+
+package Wifty::UI;
+use base qw/Template::Declare/;
+use Template::Declare::Tags;
+
+template simple => sub {
+
+    html {
+        head {};
+        body { show 'private-content'; 
+         show 'other-content'; };
+        }
+
+};
+
+private template 'private-content' => sub {
+    with( id => 'body' ), div {
+        outs('This is my content');
+    };
+
+};
+
+
+private template 'other-content' => sub {
+    with( id => 'body' ), div {
+        outs('This is other content');
+    };
+
+};
+
+
+package main;
+use Template::Declare::Tags;
+Template::Declare->init(roots => ['Wifty::UI']);
+
+use Test::More tests => 7;
+require "t/utils.pl";
+
+{
+    local $Template::Declare::Tags::BUFFER;
+    my $simple = ( show('simple') );
+   like( $simple,  qr'This is my content' );
+   like( $simple,  qr'This is other content' );
+    ok_lint($simple);
+}
+{
+    local $Template::Declare::Tags::BUFFER;
+    my $simple = ( show('does_not_exist') );
+    unlike( $simple , qr'This is my content' );
+    ok_lint($simple);
+}
+{
+    local $Template::Declare::Tags::BUFFER;
+    my $simple = ( show('private-content') );
+    unlike( $simple , qr'This is my content', "Can't call private templates" );
+    ok_lint($simple);
+}
+
+
+1;

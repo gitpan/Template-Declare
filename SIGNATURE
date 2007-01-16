@@ -1,0 +1,47 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.41.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It would check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 0d609920ce521fcce7ab41f517b43a6612f9e5c2 MANIFEST
+SHA1 003dd54215c1d09cc5208c4af1147bc2f8449288 META.yml
+SHA1 af73eb5674f59ad3dbfe6db7b1d88209bb0ed70c Makefile.PL
+SHA1 c4e1a24413ee5acb9687db9b463b49bfb28ac521 inc/Module/Install.pm
+SHA1 e7c1c86f57b6778f4bdc7fd8c1b950e60ef41bc0 inc/Module/Install/Base.pm
+SHA1 e1829448769445cdaac384a888bf9ccf42e0d89a inc/Module/Install/Can.pm
+SHA1 70aa5e2055e8e38b4eecc5fc8c91762c0e97f551 inc/Module/Install/Fetch.pm
+SHA1 8ac832baf4f9e8e72d3e8f103cee6e8a94ac80e1 inc/Module/Install/Makefile.pm
+SHA1 0807e79d6dbfda4fcd3db0fc7df2e33e0cba263b inc/Module/Install/Metadata.pm
+SHA1 4da0a1fce2339cc3f8c296c7716480d2564d9470 inc/Module/Install/Win32.pm
+SHA1 9a903a1d178954ad864c7dcc98f9fa5c005d1553 inc/Module/Install/WriteAll.pm
+SHA1 7dadb951bc24d42f50f8b03cc11eee351f8cc920 lib/Template/Declare.pm
+SHA1 d28b002935e7751146b2e1364e029a6d6d25b567 lib/Template/Declare/Tags.pm
+SHA1 3863748e23eec0c1003f13262322d632f8760d0b t/aliasing.t
+SHA1 eb9e0fce94d7cab57425f639e65921e37fa2d2c5 t/arg-declaration-styles.t
+SHA1 a432327a9f6cc4cc2f4202c6c42f9b029d782767 t/importing.t
+SHA1 2d64fa528c6c71b91427288220bf7483ae4c9836 t/indexhtml.t
+SHA1 fd63d161229114f22b86b19c079b69e6173d9f5b t/private.t
+SHA1 2d6a72afde983aca1c71a7ff81097df0472826f2 t/self.t
+SHA1 7153142fd2746b30da265611a8dd9cb7b7deb336 t/subclassing.t
+SHA1 ae5a68793688e7df8a75e796a0c0bf03924b06c0 t/subtemplates.t
+SHA1 c5454629d327a79fc88ab8b1a7f48ea9b5accdf6 t/trivial.t
+SHA1 dde3268bba42de1aa10eb76557c86ccfa7d315a9 t/utils.pl
+SHA1 2601a183f4be67a5b49ad62eea343a066fee2c32 t/xss.t
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.3 (GNU/Linux)
+
+iD8DBQFFrRgHEi9d9xCOQEYRApaBAJ9xty+CuIUVzcMlRKBXEpNo96o1RwCgpQM3
+u46pLTOM4u7IvNf6iGf99Z4=
+=LpGS
+-----END PGP SIGNATURE-----

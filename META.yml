@@ -1,10 +1,10 @@
 author: Jesse Vincent <jesse@bestpractical.com>
 distribution_type: module
-generated_by: Module::Install version 0.64
-license: Pelr
+generated_by: Module::Install version 0.62
+license: Perl
 name: Template-Declare
 no_index: 
   directory: 
     - inc
     - t
-version: -1.00_01
+version: 0.01_01

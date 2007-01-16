@@ -5,38 +5,37 @@ use strict;
 package Wifty::UI;
 use base qw/Template::Declare/;
 use Template::Declare::Tags;
-use Test::More;
+use Test::More tests => 5;
 
 template simple => sub {
 
 html { 
-    head { };
+    head { }
         body {
-            show 'content';
+            show 'content'
         }
 }
 
 };
 
 template content => sub {
-        with( id => 'body' ), div {
-            outs('This is my content');
-        };
+        div { attr { id => 'body' }
+            outs('This is my content')
+        }
 
 };
 
 
-template wrapper => sub {
+sub  wrapper {
     my ( $title, $coderef) = (@_);
-    outs('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">');
+    outs '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
         with ( xmlns      => "http://www.w3.org/1999/xhtml", 'xml:lang' => "en"), 
     html {
         head {
-            with ( 'http-equiv' => "content-type", 'content'    => "text/html; charset=utf-8"),
-            meta { };
-            with ( name    => "robots", content => "all"), meta { };
-            title { outs($title) };
-            };
+            meta { attr { 'http-equiv' => "content-type", 'content' => "text/html; charset=utf-8" } }
+            meta { attr { name => 'robots', content => 'all' } }
+            title { outs($title) }
+            }
         body {
             $coderef->(); 
         }
@@ -46,109 +45,104 @@ template wrapper => sub {
 
 template markup => sub {
     my $self = shift;
-
-    show(
-        'wrapper',
+    wrapper(
         'My page!',
         sub {
 
             with( id => 'syntax' ), div {
                 div {
-                    with(
-                        href    => "#",
-                        onclick =>
-                            "Element.toggle('syntax_content');return(false);"
-                        ),
-                        a {
-                        b {'Wiki Syntax Help'};
-                        }
+                    a { attr { href => '#', onclick => "Element.toggle('syntax_content');return(false);" }
+                        b {'Wiki Syntax Help'}
+                    }
                 };
                 with( id => 'syntax_content' ), div {
-                    h3   {'Phrase Emphasis'};
+                    h3   {'Phrase Emphasis'}
                     code {
-                        b { '**bold**'; };
-                        i {'_italic_'};
-                    };
+                        b { '**bold**' }
+                        i {'_italic_'}
+                    }
 
-                    h3 {'Links'};
+                    h3 {'Links'}
 
-                    code {'Show me a [wiki page](WikiPage)'};
-                    code {'An [example](http://url.com/ "Title")'};
-                    h3   {'Headers'};
+                    code {'Show me a [wiki page](WikiPage)'}
+                    code {'An [example](http://url.com/ "Title")'}
+                    h3   {'Headers'}
                     pre  {
                         code {
                             join( "\n",
                                 '# Header 1',
                                 '## Header 2',
-                                '###### Header 6' );
+                                '###### Header 6' )
                             }
-                    };
-                    h3  {'Lists'};
-                    p   {'Ordered, without paragraphs:'};
+                    }
+                    h3  {'Lists'}
+                    p   {'Ordered, without paragraphs:'}
                     pre {
-                        code { join( "\n", '1.  Foo', '2.  Bar' ); };
-                    };
-                    p   {' Unordered, with paragraphs:'};
+                        code { join( "\n", '1.  Foo', '2.  Bar' ) }
+                    }
+                    p   {'Unordered, with paragraphs:'}
                     pre {
                         code {
                             join( "\n",
                                 '*   A list item.',
                                 'With multiple paragraphs.',
-                                '*   Bar' );
+                                '*   Bar' )
                             }
-                    };
-                    h3 {'Code Spans'};
+                    }
+                    h3 {'Code Spans'}
 
                     p {
                         code {'`&lt;code&gt;`'}
-                            . 'spans are delimited by backticks.';
-                    };
+                            . 'spans are delimited by backticks.'
+                    }
 
-                    h3 {'Preformatted Code Blocks'};
+                    h3 {'Preformatted Code Blocks'}
 
                     p {
-                        'Indent every line of a code block by at least 4 spaces.';
-                    };
+                        'Indent every line of a code block by at least 4 spaces.'
+                    }
 
                     pre {
                         code {
                             'This is a normal paragraph.' . "\n\n" . "\n"
                                 . '    This is a preformatted' . "\n"
-                                . '    code block.';
-                        };
-                    };
-
-                    h3 {'Horizontal Rules'};
-
-                    p {
-                        'Three or more dashes: ' . code {'---'};
-                    };
-
-                    address {
-                        '(Thanks to <a href="http://daringfireball.net/projects/markdown/dingus">Daring Fireball</a>)';
+                                . '    code block.'
                         }
                     }
-            };
+
+                    h3 {'Horizontal Rules'}
+
+                    p {
+                        'Three or more dashes: ' . code {'---'}
+                    }
+
+                    address {
+                        '(Thanks to <a href="http://daringfireball.net/projects/markdown/dingus">Daring Fireball</a>)'
+                        }
+                    }
+            }
             script {
                 qq{
    // javascript flyout by Eric Wilhelm
    // TODO use images for minimize/maximize button
    // Is there a way to add a callback?
-   Element.toggle('syntax_content');
-   };
-            };
+   Element.toggle('syntax_content')
+   }
+            }
         }
-    );
+    )
 };
 
 package Template::Declare::Tags;
-
-use Test::More qw/no_plan/;
-use HTML::Lint;
+require "t/utils.pl";
+use Test::More;
 
 our $self;
 local $self = {};
 bless $self, 'Wifty::UI';
+
+Template::Declare->init( roots => ['Wifty::UI']);
+
 {
 local $Template::Declare::Tags::BUFFER;
 my $simple =(show('simple'));
@@ -165,18 +159,6 @@ ok($out =~ /Fireball/, "We found fireball in the output");
 my $count = grep { /Fireball/} @lines;
 is($count, 1, "Only found one");
 ok_lint($out);
-
-}
-sub ok_lint {
-    my $html = shift;
-
-    my $lint = HTML::Lint->new;
-
-    $lint->parse($html);
-    is( $lint->errors, 0, "Lint checked clean" );
-    foreach my $error ( $lint->errors ) {
-        diag( $error->as_string );
-    }
 
 }
 
