@@ -7,33 +7,32 @@ use vars qw/@EXPORT @EXPORT_OK $PRIVATE $self/;
 use base 'Exporter';
 use Carp;
 
-@EXPORT = qw( with template private show get_current_attr attr outs outs_raw in_isolation $self under);
+@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under);
 push @EXPORT, qw(Tr td );    # these two warns the user to use row/cell instead
 
 our %ATTRIBUTES = ();
 our $BUFFER     = '';
 our $DEPTH      = 0;
 
-sub attr (&;$) {
-    my ( $code, $out ) = @_;
-    my @rv = $code->();
-    while ( my ( $field, $val ) = splice( @rv, 0, 2 ) ) {
 
-        # only defined whle in a tag context
-        append_attr( $field, $val );
-    }
-    $out;
-}
+=head1 NAME
 
-sub outs_raw {
-    $BUFFER .= join( '', grep {defined} @_ );
-    return '';
-}
+Template::Declare::Tags
 
-sub outs {
-    $BUFFER .= join( '', map { _escape_utf8($_); } grep {defined} @_ );
-    return '';
-}
+=head1 METHODS
+
+=head2 template TEMPLATENAME => sub { 'Implementation' };
+
+C<template> declares a template in the current package. You can pass
+any url-legal characters in the template name. C<Template::Declare>
+will encode the template as a perl subroutine and stash it to be called
+with C<show()>.
+
+(Did you know that you can have characters like ":" and "/" in your Perl
+subroutine names? The easy way to get at them is with "can").
+
+
+=cut
 
 sub template ($$) {
     my $template_name  = shift;
@@ -56,6 +55,13 @@ sub template ($$) {
 
 }
 
+=head2 private template TEMPLATENAME => sub { 'Implementation' };
+
+C<private> declares that a template isn't available to be called directly from client code.
+
+=cut
+
+
 sub private (@) {
     my $class   = shift;
     my $subname = shift;
@@ -63,7 +69,68 @@ sub private (@) {
     Template::Declare::register_private_template( $class, $subname, $code );
 }
 
+=head2 attr HASH
+
+With C<attr>, you can specify attributes for HTML tags.
+
+
+Example:
+
+ p { attr { class => 'greeting text',
+            id => 'welcome' };
+
+    'This is a welcoming paragraph';
+
+ }
+
+
+=cut
+
+
+sub attr (&;$) {
+    my ( $code, $out ) = @_;
+    my @rv = $code->();
+    while ( my ( $field, $val ) = splice( @rv, 0, 2 ) ) {
+
+        # only defined whle in a tag context
+        append_attr( $field, $val );
+    }
+    $out;
+}
+
+
+=head2 outs STUFF
+
+C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s output buffer.
+
+
+=cut
+
+sub outs {
+    outs_raw( map { _escape_utf8($_); } grep {defined} @_ );
+}
+
+=head2 outs_raw STUFF
+
+C<outs_raw> appends its arguments to C<Template::Declare>'s output buffer without doing any HTML escaping.
+
+=cut
+
+sub outs_raw {
+    $BUFFER .= join( '', grep {defined} @_ );
+    return '';
+}
+
+
+
+=head2 get_current_attr 
+
+Help! I'm deprecated/
+
+=cut 
+
 sub get_current_attr ($) {
+    Carp::cluck("Deprecated!");
     $ATTRIBUTES{ $_[0] };
 }
 
@@ -73,6 +140,18 @@ our %TagAlternateSpelling = (
     base =>
         '',    # Currently 'base' has no alternate spellings; simply ignore it
 );
+
+
+=head2 install_tag TAGNAME
+
+Sets up TAGNAME as a tag that can be used in user templates.
+
+Out of the box, C<Template::Declare> installs  the :html2 :html3 :html4 :netscape and
+:form tagsets from CGI.pm.  Patches to make this configurable or use HTML::TagSet would be great.
+
+
+=cut
+
 
 sub install_tag {
     my $tag  = lc( $_[0] );
@@ -110,6 +189,23 @@ our %TAGS = (
         map {@$_} @CGI::EXPORT_TAGS{qw/:html2 :html3 :html4 :netscape :form/}
 );
 install_tag($_) for keys %TAGS;
+
+
+=head2 with
+
+C<with> is an alternative way to specify attributes for a tag:
+
+    with ( id => 'greeting'), 
+        p { 'Hello, World wide web' };
+
+
+The standard way to do this is:
+
+    p { attr { id => 'greeting' };
+        'Hello, World wide web' };
+
+
+=cut
 
 sub with (@) {
     %ATTRIBUTES = ();
@@ -202,7 +298,7 @@ sub _tag {
     return $more_code ? $more_code->() : '';
 }
 
-=head2 show [$class or $object] [$template_name or $template_coderef] 
+=head2 show [$template_name or $template_coderef] 
 
 C<show> displays templates. 
 
@@ -295,5 +391,20 @@ Template::Declare::Tags uses C<row> and C<cell> for table definitions rather tha
 sub td (&) {
     die "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
 }
+
+
+=head1 SEE ALSO
+
+L<Template::Declare>
+
+=head1 AUTHOR
+
+Jesse Vincent <jesse@bestpractical.com>
+
+=head1 COPYRIGHT
+
+Copyright 2006-2007 Best Practical Solutions, LLC
+
+=cut
 
 1;

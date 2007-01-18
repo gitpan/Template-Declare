@@ -4,7 +4,7 @@ use Carp;
 
 package Template::Declare;
 
-$Template::Declare::VERSION = "0.01_01";
+$Template::Declare::VERSION = "0.02";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -24,26 +24,120 @@ __PACKAGE__->private_templates({});
 
 =head1 NAME
 
-Template::Declare
+Template::Declare - Perlish declarative templates
 
-=head1 DESCRIPTION
+=head1 SYNOPSIS
 
-C<Template::Declare> is a prototype declarative code-based HTML
-templating system. Yes. Another one. There are many others like it,
-but this one is ours. It's designed to allow template libraries to be
-composed, mixed in and inherited. The code isn't (yet) pretty nor is 
-it in any way optimized. It's not well enough tested, either.
+C<Template::Declare> is a pure-perl declarative HTML templating system. 
 
-In the coming weeks, months and years, Template::Declare we will extend it
-to support all the things we've designed it to do. 
+Yes.  Another one. There are many others like it, but this one is ours.
 
-=head1 BUGS
+A few key features and buzzwords
 
-Crawling all over, baby. Be very, very careful. This code is so cutting edge, it can only be fashioned from carbon nanotubes.
+=over
+
+=item All templates are 100% pure perl code
+
+=item Simple declarative syntax
+
+=item No angle brackets
+
+=item Mixins
+
+=item Inheritance
+
+=item Public and private templates
+
+=back
 
 
-=cut
+=head1 USAGE
 
+
+=head2 Basic usage
+
+ package MyApp::Templates;
+ use Template::Declare::Tags;
+ use base 'Template::Declare';
+
+ template simple => sub {
+    html {
+        head {}
+        body {
+            p {'Hello, world wide web!'};
+            }
+        }
+ };
+
+ package main;
+ use Template::Declare;
+ Template::Declare->init( roots => ['MyApp::Templates']);
+ print Template::Declare->show( 'simple');
+
+ # Output:
+ #
+ #
+ # <html>
+ #  <head></head>
+ #  <body>
+ #   <p>Hello, world wide web!
+ #   </p>
+ #  </body>
+ # </html>
+
+
+=head2 A slightly more advanced example
+
+In this example, we'll show off how to set attributes on HTML tags, how to call other templates and how to declare a I<private> template that can't be called directly.
+
+ package MyApp::Templates;
+ use Template::Declare::Tags;
+ use base 'Template::Declare';
+
+ private template 'header' => sub {
+        head {
+            title { 'This is a webpage'};
+            meta { attr { generator => "This is not your father's frontpage"}}
+        }
+ };
+
+ template simple => sub {
+    html {
+        show('header');
+        body {
+            p { attr { class => 'greeting'};
+                'Hello, world wide web!'};
+            }
+        }
+ };
+
+ package main;
+ use Template::Declare;
+ Template::Declare->init( roots => ['MyApp::Templates']);
+ print Template::Declare->show( 'simple');
+
+ # Output:
+ #
+ #  <html>
+ #  <head>
+ #   <title>This is a webpage
+ #   </title>
+ #   <meta generator="This is not your father&#39;s frontpage" />
+ #  </head>
+ #  <body>
+ #   <p class="greeting">Hello, world wide web!
+ #   </p>
+ #  </body>
+ # </html>
+ 
+
+=head2 Multiple template roots (search paths)
+
+=head2 Inheritance
+
+=head2 Aliasing
+
+=head1 METHODS
 
 =head2 init
 
@@ -67,6 +161,18 @@ sub init {
 
 }
 
+=head2 show TEMPLATE_NAME
+
+Call C<show> with a C<template_name> and C<Template::Declare> will render that template and return the content as a scalar.
+
+=cut
+
+sub show {
+    my $class = shift;
+    my $template = shift;
+    Template::Declare::Tags::show($template);
+
+}
 
 =head2 alias
 
@@ -127,7 +233,12 @@ sub import {
 }
 
 
-=head2 has_template
+=head2 has_template PACKAGE TEMPLATE_NAME SHOW_PRIVATE
+
+Takes a package, template name and a boolean. The boolean determines whether to show private templates.
+
+Returns a reference to the template's code if found. Otherwise, 
+returns undef.
 
 =cut
 
@@ -159,13 +270,15 @@ sub has_template {
 
 =head2 resolve_template TEMPLATE_PATH INCLUDE_PRIVATE_TEMPLATES
 
-Turns a template path (C<TEMPLATE_PATH) into a C<CODEREF>.  If the boolean
-C<INCLUDE_PRIVATE_TEMPLATES> is true, resolves private template in
-addition to public ones.
+Turns a template path (C<TEMPLATE_PATH>) into a C<CODEREF>.  If the
+boolean C<INCLUDE_PRIVATE_TEMPLATES> is true, resolves private template
+in addition to public ones.
 
-First it looks through all the valid Template::Declare roots. For each root, it looks to see
-if the root has a template called $template_name directly (or via an C<import> statement). Then it looks 
-to see if there are any C<alias>ed paths for the root with prefixes that match the template we're looking for.
+First it looks through all the valid Template::Declare roots. For each
+root, it looks to see if the root has a template called $template_name
+directly (or via an C<import> statement). Then it looks to see if there
+are any L</alias>ed paths for the root with prefixes that match the
+template we're looking for.
 
 =cut
 
@@ -219,16 +332,33 @@ sub _subname {
     return join ('', $prefix,$template);
 }
 
+=head2 register_template PACKAGE TEMPLATE_NAME CODEREF
+
+This method registers a template called C<TEMPLATE_NAME> in package
+C<PACKAGE>. As you might guess, C<CODEREF> defines the template's
+implementation.
+
+=cut
 
 sub register_template {
     my $class         = shift;
     my $template_name = shift;
     my $code          = shift;
     push @{ __PACKAGE__->templates()->{$class} }, $template_name;
-    _register_template( $class,
-        _template_name_to_sub($template_name), $code )
+    _register_template( $class, _template_name_to_sub($template_name), $code )
 
 }
+
+=head2 register_template PACKAGE TEMPLATE_NAME CODEREF
+
+This method registers a private template called C<TEMPLATE_NAME> in package
+C<PACKAGE>. As you might guess, C<CODEREF> defines the template's
+implementation. 
+
+Private templates can't be called directly from user code but only from other 
+templates.
+
+=cut
 
 sub register_private_template {
     my $class         = shift;
@@ -249,5 +379,37 @@ sub _register_template {
     *{ $class . '::' . $subname } = $coderef;
 }
 
+
+
+
+=head1 BUGS
+
+Crawling all over, baby. Be very, very careful. This code is so cutting edge, it can only be fashioned from carbon nanotubes.
+
+Some specific bugs and design flaws that we'd love to see fixed
+
+=over
+
+=item Output isn't streamy.
+
+=back
+
+If you run into bugs or misfeatures, please report them to
+C<bug-template-declare@rt.cpan.org>.
+
+
+=head1 SEE ALSO
+
+L<Jifty>
+
+=head1 AUTHOR
+
+Jesse Vincent <jesse@bestpractical.com>
+
+=head1 COPYRIGHT
+
+Copyright 2006-2007 Best Practical Solutions, LLC
+
+=cut
 
 1;

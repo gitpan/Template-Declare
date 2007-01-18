@@ -1,0 +1,186 @@
+Template::Declare(3)  User Contributed Perl Documentation Template::Declare(3)
+
+
+
+NNAAMMEE
+       Template::Declare - Perlish declarative templates
+
+SSYYNNOOPPSSIISS
+       "Template::Declare" is a pure-perl declarative HTML templating system.
+
+       Yes.  Another one. There are many others like it, but this one is ours.
+
+       A few key features and buzzwords
+
+       All templates are 100% pure perl code
+       Simple declarative syntax
+       No angle brackets
+       Mixins
+       Inheritance
+       Public and private templates
+
+UUSSAAGGEE
+       BBaassiicc uussaaggee
+
+        package MyApp::Templates;
+        use Template::Declare::Tags;
+        use base 'Template::Declare';
+
+        template simple => sub {
+           html {
+               head {}
+               body {
+                   p {'Hello, world wide web!'};
+                   }
+               }
+        };
+
+        package main;
+        use Template::Declare;
+        Template::Declare->init( roots => ['MyApp::Templates']);
+        print Template::Declare->show( 'simple');
+
+        # Output:
+        #
+        #
+        # <html>
+        #  <head></head>
+        #  <body>
+        #   <p>Hello, world wide web!
+        #   </p>
+        #  </body>
+        # </html>
+
+       AA sslliigghhttllyy mmoorree aaddvvaanncceedd eexxaammppllee
+
+       In this example, we'll show off how to set attributes on HTML tags, how
+       to call other templates and how to declare a _p_r_i_v_a_t_e template that
+       can't be called directly.
+
+        package MyApp::Templates;
+        use Template::Declare::Tags;
+        use base 'Template::Declare';
+
+        private template 'header' => sub {
+               head {
+                   title { 'This is a webpage'};
+                   meta { attr { generator => "This is not your father's frontpage"}}
+               }
+        };
+
+        template simple => sub {
+           html {
+               show('header');
+               body {
+                   p { attr { class => 'greeting'};
+                       'Hello, world wide web!'};
+                   }
+               }
+        };
+
+        package main;
+        use Template::Declare;
+        Template::Declare->init( roots => ['MyApp::Templates']);
+        print Template::Declare->show( 'simple');
+
+        # Output:
+        #
+        #  <html>
+        #  <head>
+        #   <title>This is a webpage
+        #   </title>
+        #   <meta generator="This is not your father&#39;s frontpage" />
+        #  </head>
+        #  <body>
+        #   <p class="greeting">Hello, world wide web!
+        #   </p>
+        #  </body>
+        # </html>
+
+       MMuullttiippllee tteemmppllaattee rroooottss ((sseeaarrcchh ppaatthhss))
+
+
+       IInnhheerriittaannccee
+
+
+       AAlliiaassiinngg
+
+
+MMEETTHHOODDSS
+       iinniitt
+
+       This _c_l_a_s_s _m_e_t_h_o_d initializes the "Template::Declare" system.
+
+       roots
+
+       sshhooww TTEEMMPPLLAATTEE__NNAAMMEE
+
+       Call "show" with a "template_name" and "Template::Declare" will render
+       that template and return the content as a scalar.
+
+       aalliiaass
+
+        alias Some::Clever::Mixin under '/mixin';
+
+       iimmppoorrtt
+
+        import Wifty::UI::something under '/something';
+
+       hhaass__tteemmppllaattee PPAACCKKAAGGEE TTEEMMPPLLAATTEE__NNAAMMEE SSHHOOWW__PPRRIIVVAATTEE
+
+       Takes a package, template name and a boolean. The boolean determines
+       whether to show private templates.
+
+       Returns a reference to the template's code if found. Otherwise, returns
+       undef.
+
+       rreessoollvvee__tteemmppllaattee TTEEMMPPLLAATTEE__PPAATTHH IINNCCLLUUDDEE__PPRRIIVVAATTEE__TTEEMMPPLLAATTEESS
+
+       Turns a template path ("TEMPLATE_PATH") into a "CODEREF".  If the
+       boolean "INCLUDE_PRIVATE_TEMPLATES" is true, resolves private template
+       in addition to public ones.
+
+       First it looks through all the valid Template::Declare roots. For each
+       root, it looks to see if the root has a template called $template_name
+       directly (or via an "import" statement). Then it looks to see if there
+       are any "alias"ed paths for the root with prefixes that match the tem-
+       plate we're looking for.
+
+       rreeggiisstteerr__tteemmppllaattee PPAACCKKAAGGEE TTEEMMPPLLAATTEE__NNAAMMEE CCOODDEERREEFF
+
+       This method registers a template called "TEMPLATE_NAME" in package
+       "PACKAGE". As you might guess, "CODEREF" defines the template's imple-
+       mentation.
+
+       rreeggiisstteerr__tteemmppllaattee PPAACCKKAAGGEE TTEEMMPPLLAATTEE__NNAAMMEE CCOODDEERREEFF
+
+       This method registers a private template called "TEMPLATE_NAME" in
+       package "PACKAGE". As you might guess, "CODEREF" defines the template's
+       implementation.
+
+       Private templates can't be called directly from user code but only from
+       other templates.
+
+BBUUGGSS
+       Crawling all over, baby. Be very, very careful. This code is so cutting
+       edge, it can only be fashioned from carbon nanotubes.
+
+       Some specific bugs and design flaws that we'd love to see fixed
+
+       Output isn't streamy.
+
+       If you run into bugs or misfeatures, please report them to "bug-tem-
+       plate-declare@rt.cpan.org".
+
+SSEEEE AALLSSOO
+       Jifty
+
+AAUUTTHHOORR
+       Jesse Vincent <jesse@bestpractical.com>
+
+CCOOPPYYRRIIGGHHTT
+       Copyright 2006-2007 Best Practical Solutions, LLC
+
+
+
+perl v5.8.8                       2007-01-18              Template::Declare(3)
