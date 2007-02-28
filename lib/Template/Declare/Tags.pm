@@ -1,3 +1,4 @@
+use 5.006;
 use warnings;
 use strict;
 
@@ -7,11 +8,10 @@ use vars qw/@EXPORT @EXPORT_OK $PRIVATE $self/;
 use base 'Exporter';
 use Carp;
 
-@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under);
+@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under get_current_attr );
 push @EXPORT, qw(Tr td );    # these two warns the user to use row/cell instead
 
 our %ATTRIBUTES = ();
-our $BUFFER     = '';
 our $DEPTH      = 0;
 
 
@@ -43,7 +43,9 @@ sub template ($$) {
 
     # template "foo" ==> CallerPkg::_jifty_template_foo;
     # template "foo/bar" ==> CallerPkg::_jifty_template_foo/bar;
-    my $codesub = sub { my $self = shift if ($_[0]); &$coderef($self) };
+    my $codesub = sub { local $self = $_[0] || $self || $template_class;
+			#local $self = $template_class unless $self;
+                        &$coderef($self) };
 
     if (wantarray) { 
         # We're being called by something like private that doesn't want us to register ourselves
@@ -117,7 +119,7 @@ C<outs_raw> appends its arguments to C<Template::Declare>'s output buffer withou
 =cut
 
 sub outs_raw {
-    $BUFFER .= join( '', grep {defined} @_ );
+    Template::Declare->buffer->append( join( '', grep {defined} @_ ));
     return '';
 }
 
@@ -130,7 +132,6 @@ Help! I'm deprecated/
 =cut 
 
 sub get_current_attr ($) {
-    Carp::cluck("Deprecated!");
     $ATTRIBUTES{ $_[0] };
 }
 
@@ -262,15 +263,15 @@ sub _tag {
             wantarray ? () : '';
         };
 
-        local $BUFFER;
         local $DEPTH = $DEPTH + 1;
         %ATTRIBUTES = ();
+        Template::Declare->new_buffer_frame;
         my $last = join '', map { ref($_) ? $_ : _escape_utf8($_) } $code->();
 
-        if ( length($BUFFER) ) {
+        if ( length(Template::Declare->buffer->data) ) {
 
-# We concatenate to force scalarization when $last or $BUFFER is solely a Jifty::Web::Link
-            $buf .= '>' . $BUFFER;
+# We concatenate to force scalarization when $last or $Template::Declare->buffer is solely a Jifty::Web::Link
+            $buf .= '>' . Template::Declare->buffer->data;
             $had_content = 1;
         } elsif ( length $last ) {
             $buf .= '>' . $last;
@@ -278,22 +279,26 @@ sub _tag {
         } else {
             $had_content = 0;
         }
+        
+        Template::Declare->end_buffer_frame;
 
     }
 
     if ($had_content) {
-        $BUFFER .= $buf;
-        $BUFFER .= "\n" . ( " " x $DEPTH ) if ( $buf =~ /\n/ );
-        $BUFFER .= "</$tag>";
+        $buf .= "\n" . ( " " x $DEPTH ) if ( $buf =~ /\n/ );
+        $buf .= "</$tag>";
     } elsif ( $tag =~ m{\A(?: base | meta | link | hr | br | param | img | area | input | col )\z}x) {
         # XXX TODO: This should come out of HTML::Tagset
         # EMPTY tags can close themselves.
-        $BUFFER .= $buf . " />";
+         $buf .= " />";
     } else {
 
         # Otherwise we supply a closing tag.
-        $BUFFER .= $buf . "></$tag>";
+        $buf .= "></$tag>";
     }
+
+
+    Template::Declare->buffer->append( $buf);
 
     return $more_code ? $more_code->() : '';
 }
@@ -323,6 +328,7 @@ sub show {
 
     # if we're inside a template, we should show private templates
     if ( caller()->isa('Template::Declare') ) { $INSIDE_TEMPLATE = 1; }
+    else { Template::Declare->new_buffer_frame }
     my $callable =
         ref($template) eq 'CODE'
         ? $template
@@ -330,15 +336,14 @@ sub show {
 
     return '' unless ($callable);
 
-    my $buf = '';
-    {
-        local $BUFFER = '';
+        Template::Declare->new_buffer_frame;
         &$callable($self);
-        $buf = $BUFFER;
-    }
-
-    $BUFFER .= $buf;
-    return $buf;
+        my $content = Template::Declare->buffer->data;
+        Template::Declare->end_buffer_frame;
+        Template::Declare->buffer->append( $content);
+    my $data =  Template::Declare->buffer->data;
+    unless ($INSIDE_TEMPLATE) {  Template::Declare->end_buffer_frame  }
+    return $data;
 }
 
 sub _escape_utf8 {

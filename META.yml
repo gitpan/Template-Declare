@@ -1,10 +1,15 @@
+abstract: Perlish declarative templates
 author: Jesse Vincent <jesse@bestpractical.com>
+build_requires: 
+  HTML::Lint: 0
 distribution_type: module
 generated_by: Module::Install version 0.64
-license: Perl
+license: perl
 name: Template-Declare
 no_index: 
   directory: 
     - inc
     - t
-version: 0.02
+requires: 
+  perl: 5.6.0
+version: 0.03

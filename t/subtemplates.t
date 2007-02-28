@@ -31,14 +31,12 @@ Template::Declare->init(roots => ['Wifty::UI']);
 
 
 {
-local $Template::Declare::Tags::BUFFER;
 my $simple =(show('my/content'));
 ok($simple =~ 'This is my content');
 #diag ($simple);
 ok_lint($simple);
 }
 {
-local $Template::Declare::Tags::BUFFER;
 my $simple =(show('simple'));
 ok($simple =~ 'This is my content');
 #diag ($simple);

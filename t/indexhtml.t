@@ -45,7 +45,7 @@ Template::Declare->init(roots => ['Wifty::UI']);
 
 for('index.html', 'dash-test'){ 
 {
-local $Template::Declare::Tags::BUFFER;
+Template::Declare->buffer->clear;
 my $simple =(show($_));
 ok($simple =~ 'This is my content');
 #diag ($simple);

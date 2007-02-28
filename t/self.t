@@ -26,7 +26,6 @@ Template::Declare->init(roots => ['Wifty::UI']);
 use Test::More tests => 3;
 require "t/utils.pl";
 {
-    local $Template::Declare::Tags::BUFFER;
     local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple =  Template::Declare::Tags::show('simple') ;
     like( $simple,  qr'This is my content' );

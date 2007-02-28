@@ -27,7 +27,7 @@ Template::Declare->init( roots => ['Wifty::UI']);
 
 for (qw(content content_2 content_3 ) ){
 {
-local $Template::Declare::Tags::BUFFER;
+Template::Declare->buffer->clear;
 my $simple =(show($_));
 ok($simple =~ 'This is my &lt;b&gt;content');
 ok_lint($simple);
@@ -35,9 +35,9 @@ ok_lint($simple);
 }
 for (qw(content_4) ){
 {
-local $Template::Declare::Tags::BUFFER;
+Template::Declare->buffer->clear;
 my $simple =(show($_));
-ok($simple =~ m/This is my\s*<b>\s*content/);
+ok($simple =~ m/This is my\s*<b>\s*content/, $simple);
 ok_lint($simple);
 }
 }

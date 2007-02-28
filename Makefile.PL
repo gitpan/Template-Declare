@@ -1,6 +1,9 @@
 use inc::Module::Install;
-name('Template-Declare');
-license('Perl');
-author('Jesse Vincent <jesse@bestpractical.com>');
-version_from('lib/Template/Declare.pm');
+
+name            'Template-Declare';
+license         'perl';
+author          'Jesse Vincent <jesse@bestpractical.com>';
+all_from        'lib/Template/Declare.pm';
+build_requires  'HTML::Lint';
+
 WriteAll;

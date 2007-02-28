@@ -69,7 +69,6 @@ require "t/utils.pl";
 Template::Declare->init(roots => ['TestApp::UI']);
 
 for (qw(content content_curly content_explicit)) {
-    local $Template::Declare::Tags::BUFFER;
     ok_content( show($_), $_ );
 }
 
@@ -77,7 +76,6 @@ for (
     qw(content_mixed1 content_mixed2 content_attrs content_withs content_curlies)
   )
 {
-    local $Template::Declare::Tags::BUFFER;
     ok_multicontent( show($_), $_ );
 }
 

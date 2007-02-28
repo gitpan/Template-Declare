@@ -39,20 +39,17 @@ use Test::More tests => 7;
 require "t/utils.pl";
 
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('simple') );
    like( $simple,  qr'This is my content' );
    like( $simple,  qr'This is other content' );
     ok_lint($simple);
 }
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('does_not_exist') );
     unlike( $simple , qr'This is my content' );
     ok_lint($simple);
 }
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('private-content') );
     unlike( $simple , qr'This is my content', "Can't call private templates" );
     ok_lint($simple);

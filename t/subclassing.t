@@ -55,7 +55,6 @@ use Test::More tests => 9;
 require "t/utils.pl";
 
 {
-    local $Template::Declare::Tags::BUFFER;
     local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple =  Template::Declare::Tags::show('simple') ;
     like( $simple,  qr'This is my content' );
@@ -67,20 +66,17 @@ require "t/utils.pl";
 Template::Declare->init(
     roots => [ 'Baseclass::UI', 'Wifty::UI', 'Childclass::UI' ] );
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('simple') );
     like( $simple, qr'This is child class content' );
     ok_lint($simple);
 }
 
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('does_not_exist') );
     unlike( $simple , qr'This is my content' );
     ok_lint($simple);
 }
 {
-    local $Template::Declare::Tags::BUFFER;
     my $simple = ( show('private-content') );
     unlike( $simple , qr'This is my content', "Can't call private templates" );
     ok_lint($simple);

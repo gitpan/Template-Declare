@@ -34,8 +34,8 @@ private template 'private-content' => sub {
     };
 };
 
-import Wifty::UI::imported_pkg under '/imported_pkg';
-import Wifty::UI::imported_subclass_pkg under '/imported_subclass_pkg';
+import_templates Wifty::UI::imported_pkg under '/imported_pkg';
+import_templates Wifty::UI::imported_subclass_pkg under '/imported_subclass_pkg';
 
 package main;
 use Template::Declare::Tags;
@@ -51,8 +51,6 @@ ok( Template::Declare->has_template('imported_pkg/imported') );
 ok( Template::Declare->has_template('imported_subclass_pkg/imported'), "When you subclass and then import, the superclass's imports are there" );
 
 {
-    local $Template::Declare::Tags::BUFFER;
-    local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple = ( show('imported_pkg/imported') );
     like( $simple, qr'This is imported' );
     like( $simple, qr'Wifty::UI',
@@ -61,8 +59,6 @@ ok( Template::Declare->has_template('imported_subclass_pkg/imported'), "When you
 }
 
 {
-    local $Template::Declare::Tags::BUFFER;
-    local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple = ( show('imported_subclass_pkg/imported') );
     like(
         $simple,

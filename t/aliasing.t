@@ -55,8 +55,6 @@ ok( Template::Declare->has_template('aliased_pkg/aliased') );
 ok( Template::Declare->has_template('aliased_subclass_pkg/aliased'), "When you subclass and then alias, the superclass's aliass are there" );
 
 {
-    local $Template::Declare::Tags::BUFFER;
-    local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple = ( show('aliased_pkg/aliased') );
     like( $simple, qr'This is aliased' );
     like( $simple, qr'Wifty::UI::aliased_pkg',
@@ -66,8 +64,6 @@ ok( Template::Declare->has_template('aliased_subclass_pkg/aliased'), "When you s
 
 
 {
-    local $Template::Declare::Tags::BUFFER;
-    local $Template::Declare::Tags::self = 'Wifty::UI';
     my $simple = ( show('aliased_subclass_pkg/aliased') );
     like(
         $simple,

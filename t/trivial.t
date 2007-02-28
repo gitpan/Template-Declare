@@ -5,7 +5,7 @@ use strict;
 package Wifty::UI;
 use base qw/Template::Declare/;
 use Template::Declare::Tags;
-use Test::More tests => 5;
+use Test::More tests => 9;
 
 template simple => sub {
 
@@ -144,13 +144,28 @@ bless $self, 'Wifty::UI';
 Template::Declare->init( roots => ['Wifty::UI']);
 
 {
-local $Template::Declare::Tags::BUFFER;
+Template::Declare->buffer->clear;
 my $simple =(show('simple'));
 ok($simple =~ 'This is my content');
 #diag ($simple);
 ok_lint($simple);
 }
-{local $Template::Declare::Tags::BUFFER;
+{
+Template::Declare->buffer->clear;
+my $simple =Template::Declare->show('simple');
+ok($simple =~ 'This is my content');
+#diag ($simple);
+ok_lint($simple);
+}
+{
+Template::Declare->buffer->clear;
+Template::Declare->show('simple');
+ok(Template::Declare->buffer->data() =~ 'This is my content');
+#diag ($simple);
+ok_lint(Template::Declare->buffer->data());
+}
+{
+Template::Declare->buffer->clear;
 my $out =  (show('markup'));
 #diag($out);
 my @lines = split("\n",$out);
