@@ -14,9 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 c30c26975d4b18093583c1d0ef832faa278d3a1e MANIFEST
-SHA1 e23792ca48a1f8242b8999b8d8ee43d65a8483c4 META.yml
-SHA1 22e091b0674e7bc2ecfbb3e82d1a49309de0713a Makefile.PL
+SHA1 a82d804a56083eed385b905e369980ff341da640 Changes
+SHA1 e3f4ddd12a7b59d743c0d82190d8387f76697d31 MANIFEST
+SHA1 8fe337b5d2ba492e87c56ab47ae6c3111971a972 META.yml
+SHA1 bfd535047643f7a37e14a9d5c4bb4ca30133a414 Makefile.PL
 SHA1 ac88cc91e2e25f60aec5d1a7b736c12a55641787 README
 SHA1 9b2f9d83bcf77860f53a0c07c90a4a59ad9f5df1 inc/Module/Install.pm
 SHA1 abe32855d75ab13747cf65765af9947b7a8c3057 inc/Module/Install/Base.pm
@@ -26,7 +27,7 @@ SHA1 2249171a2b72cd73ff2c0a06597d29f86e5df456 inc/Module/Install/Makefile.pm
 SHA1 381bb98ea3877bba49ae85e7a7ea130645fd3dbf inc/Module/Install/Metadata.pm
 SHA1 0c2118868ef82ac517eb6d9c3bd93e6eb9bbf83e inc/Module/Install/Win32.pm
 SHA1 e827d6d43771032fa3df35c0ad5e5698d0e54cda inc/Module/Install/WriteAll.pm
-SHA1 2c424fb839b16c658918a038d2f227f509682104 lib/Template/Declare.pm
+SHA1 13f57343b310deac40c6da5648da72f42fb9a9f5 lib/Template/Declare.pm
 SHA1 2a2fc392890d9eedead546a017302e8dc1b4d033 lib/Template/Declare/Buffer.pm
 SHA1 e2592437fa215a4023a6f1fb41ce10e7e91eb77a lib/Template/Declare/Tags.pm
 SHA1 bb0da54f2b3f2d7955baa41ee458cb3d1887f475 t/99-pod.t
@@ -44,7 +45,7 @@ SHA1 fa517cb4bbc24e79d202599c16bf1755982c13af t/xss.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.3 (Darwin)
 
-iD8DBQFF5d0FEi9d9xCOQEYRAlIxAJwPKUhMwYB3ZOlTj3GYpVjOgdTmoQCdEOF1
-xAHk/eR6dlKeTMjCnjcTlzc=
-=M4Bh
+iD8DBQFF5wyJEi9d9xCOQEYRAh+JAJ0ZrD0T2E6ipB3jxSGjXTTpPXIlCACgtpYn
+07+QgQbRVnr8RdODp4yzJgM=
+=3Z0s
 -----END PGP SIGNATURE-----

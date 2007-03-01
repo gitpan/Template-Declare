@@ -2,6 +2,7 @@ abstract: Perlish declarative templates
 author: Jesse Vincent <jesse@bestpractical.com>
 build_requires: 
   HTML::Lint: 0
+  Test::More: 0
 distribution_type: module
 generated_by: Module::Install version 0.64
 license: perl
@@ -11,5 +12,6 @@ no_index:
     - inc
     - t
 requires: 
+  Class::Accessor: 0
   perl: 5.6.0
-version: 0.03
+version: 0.05
