@@ -146,21 +146,23 @@ Template::Declare->init( roots => ['Wifty::UI']);
 {
 Template::Declare->buffer->clear;
 my $simple =(show('simple'));
-ok($simple =~ 'This is my content');
+ok($simple =~ 'This is my content', "show fucntion returned context ");
 #diag ($simple);
 ok_lint($simple);
 }
 {
 Template::Declare->buffer->clear;
 my $simple =Template::Declare->show('simple');
-ok($simple =~ 'This is my content');
+ok($simple =~ 'This is my content', "T::D->show returns a string");
 #diag ($simple);
 ok_lint($simple);
 }
 {
 Template::Declare->buffer->clear;
-Template::Declare->show('simple');
-ok(Template::Declare->buffer->data() =~ 'This is my content');
+my $ret = Template::Declare->show('simple');
+#diag $ret;
+#diag (Template::Declare->buffer->data());
+ok(Template::Declare->buffer->data() =~ 'This is my content', "show simple filled the buffer");
 #diag ($simple);
 ok_lint(Template::Declare->buffer->data());
 }

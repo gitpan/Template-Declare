@@ -41,7 +41,7 @@ package main;
 use Template::Declare::Tags;
 Template::Declare->init( roots => ['Wifty::UI'] );
 
-use Test::More tests => 10;
+use Test::More tests => 12;
 require "t/utils.pl";
 
 ok( Wifty::UI::imported_pkg->has_template('imported') );
@@ -49,6 +49,9 @@ ok( Wifty::UI::imported_subclass_pkg->has_template('imported') );
 
 ok( Template::Declare->has_template('imported_pkg/imported') );
 ok( Template::Declare->has_template('imported_subclass_pkg/imported'), "When you subclass and then import, the superclass's imports are there" );
+
+is( Wifty::UI::imported_subclass_pkg->path_for('imported'), '/imported_subclass_pkg/imported' );
+is( Wifty::UI->path_for('simple'), '/simple' );
 
 {
     my $simple = ( show('imported_pkg/imported') );

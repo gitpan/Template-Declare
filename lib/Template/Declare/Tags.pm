@@ -8,12 +8,12 @@ use vars qw/@EXPORT @EXPORT_OK $PRIVATE $self/;
 use base 'Exporter';
 use Carp;
 
-@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under get_current_attr );
+@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under get_current_attr smart_tag_wrapper );
 push @EXPORT, qw(Tr td );    # these two warns the user to use row/cell instead
 
 our %ATTRIBUTES = ();
+our %ELEMENT_ID_CACHE = ();
 our $DEPTH      = 0;
-
 
 =head1 NAME
 
@@ -89,15 +89,15 @@ Example:
 =cut
 
 
-sub attr (&;$) {
-    my ( $code, $out ) = @_;
+sub attr (&;@) {
+    my $code = shift;
     my @rv = $code->();
     while ( my ( $field, $val ) = splice( @rv, 0, 2 ) ) {
 
         # only defined whle in a tag context
         append_attr( $field, $val );
     }
-    $out;
+    return @_;
 }
 
 
@@ -108,9 +108,7 @@ C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s ou
 
 =cut
 
-sub outs {
-    outs_raw( map { _escape_utf8($_); } grep {defined} @_ );
-}
+#sub outs { outs_raw( map { _escape_utf8($_); } grep {defined} @_ ); }
 
 =head2 outs_raw STUFF
 
@@ -118,12 +116,40 @@ C<outs_raw> appends its arguments to C<Template::Declare>'s output buffer withou
 
 =cut
 
-sub outs_raw {
-    Template::Declare->buffer->append( join( '', grep {defined} @_ ));
+#sub outs_raw { Template::Declare->buffer->append( join( '', grep {defined} @_ )); return ''; }
+
+
+
+sub outs { _outs(0, @_); }
+sub outs_raw { _outs(1, @_); }
+
+sub _outs {
+    my $raw     = shift;
+    my @phrases = (@_);
+    my $buf;
+    Template::Declare->new_buffer_frame;
+
+    foreach my $item ( grep {defined} @phrases ) {
+
+        Template::Declare->new_buffer_frame;
+        my $returned = ref($item) eq 'CODE'
+            ? $item->()
+            : ( $raw ? $item : _escape_utf8($item) ) ||'';
+        my $content = Template::Declare->buffer->data ||'';
+        Template::Declare->end_buffer_frame;
+        Template::Declare->buffer->append( $content . $returned );
+    }
+
+    $buf = Template::Declare->buffer->data ||'';
+    Template::Declare->end_buffer_frame;
+    if ( defined wantarray and not wantarray ) {
+        return $buf;
+    } else {
+        Template::Declare->buffer->append($buf);
+
+    }
     return '';
 }
-
-
 
 =head2 get_current_attr 
 
@@ -173,11 +199,13 @@ sub install_tag {
             # Scalar context - return a coderef that represents ourselves.
             my @__    = @_;
             my $_self = $self;
-            sub {
+           my $sub =  sub {
                 local $self     = $_self;
                 local *__ANON__ = $tag;
                 _tag(@__);
             };
+            bless $sub, 'Template::Declare::Tag';
+            return $sub;
         } else {
             _tag(@_);
         }
@@ -208,13 +236,78 @@ The standard way to do this is:
 
 =cut
 
+
 sub with (@) {
     %ATTRIBUTES = ();
     while ( my ( $key, $val ) = splice( @_, 0, 2 ) ) {
         no warnings 'uninitialized';
         $ATTRIBUTES{$key} = $val;
+
+        if ( lc($key) eq 'id' ) {
+            if ( $ELEMENT_ID_CACHE{$val}++) {
+            	warn "HTML appears to contain illegal duplicate element id: $val";
+	    }
+        }
+
     }
     wantarray ? () : '';
+}
+
+=head2 smart_tag_wrapper
+
+  # create a tag that has access to the arguments set with with.
+  sub sample_smart_tag (&) {
+      my $code = shift;
+
+      smart_tag_wrapper {
+          my %args = @_; # set using 'with'
+          outs( 'keys: ' . join( ', ', sort keys %args) . "\n" );
+          $code->();
+      };
+  }
+  
+  # use it
+  with ( foo => 'bar', baz => 'bundy' ),
+    sample_smart_tag {
+      outs( "Hello, World!\n" );
+    };
+
+  # output would be
+  keys: baz, foo
+  Hello, World!
+
+The smart tag wrapper allows you to create code that has access to the arguments
+set using 'with', it passes them in to the wrapped code in C<@_>. It also takes
+care of putting the output in the right place and tidying up after itself.
+
+=cut
+
+sub smart_tag_wrapper (&) {
+    my $coderef = shift;
+    my $buf     = "\n";
+
+    Template::Declare->new_buffer_frame;
+
+    my $last = join '',    #
+      map { ref($_) ? $_ : _escape_utf8($_) }    #
+      $coderef->(%ATTRIBUTES);
+
+    %ATTRIBUTES = ();                            # prevent leakage
+
+    if ( length( Template::Declare->buffer->data ) ) {
+
+        # We concatenate to force scalarization when $last or
+        # $Template::Declare->buffer is solely a Jifty::Web::Link
+        $buf .= Template::Declare->buffer->data;
+    }
+    elsif ( length $last ) {
+        $buf .= $last;
+    }
+
+    Template::Declare->end_buffer_frame;
+    Template::Declare->buffer->append($buf);
+
+    return '';
 }
 
 sub _tag {
@@ -299,53 +392,92 @@ sub _tag {
 
 
     Template::Declare->buffer->append( $buf);
-
-    return $more_code ? $more_code->() : '';
+    return (ref($more_code) && $more_code->isa('CODE')) ? $more_code->() : '';
 }
 
 =head2 show [$template_name or $template_coderef] 
 
 C<show> displays templates. 
 
-Do not call templates with arguments. That's not supported. 
+Do not call templates with arguments. That's not supported.
+
 XXX TODO: This makes jesse cry. Audrey/cl: sanity check?
 
-
-C<show> can either be called with a template name or a package/object and 
-a template.  (It's both functional and OO.)
-
+C<show> can either be called with a template name or a package/object
+and a template.  (It's both functional and OO.)
 
 If called from within a Template::Declare subclass, then private
 templates are accessible and visible. If called from something that
 isn't a Template::Declare, only public templates wil be visible.
 
+From the outside world, users can either call
+C<Template::Declare->show()> or C<Template::Declare::tags::show()> to
+render a publicly visible template.
+
+"private" templates may only be called from within the
+C<Template::Declare> package.
+
 =cut
 
 sub show {
-    my $template = shift;
-
+    my $template        = shift;
     my $INSIDE_TEMPLATE = 0;
 
     # if we're inside a template, we should show private templates
-    if ( caller()->isa('Template::Declare') ) { $INSIDE_TEMPLATE = 1; }
-    else { Template::Declare->new_buffer_frame }
-    my $callable =
-        ref($template) eq 'CODE'
-        ? $template
-        : Template::Declare->has_template( $template, $INSIDE_TEMPLATE );
-
-    return '' unless ($callable);
-
+    if ( caller->isa('Template::Declare') ) {
+        $INSIDE_TEMPLATE = 1;
+    }
+    else {
         Template::Declare->new_buffer_frame;
-        &$callable($self);
-        my $content = Template::Declare->buffer->data;
+    }
+    _show_template( $template, $INSIDE_TEMPLATE );
+    my $data = Template::Declare->buffer->data;
+    unless ($INSIDE_TEMPLATE) {
         Template::Declare->end_buffer_frame;
-        Template::Declare->buffer->append( $content);
-    my $data =  Template::Declare->buffer->data;
-    unless ($INSIDE_TEMPLATE) {  Template::Declare->end_buffer_frame  }
+        %ELEMENT_ID_CACHE = ();
+    }
+    return $data;
+
+}
+
+sub show_page {
+    my $template = shift;
+    my $INSIDE_TEMPLATE = 0;
+
+    # if we're inside a template, we should show private templates
+    Template::Declare->new_buffer_frame;
+    _show_template( $template, 0 );
+    my $data = Template::Declare->buffer->data;
+    Template::Declare->end_buffer_frame;
+    Template::Declare->buffer->append($data); 
+    %ELEMENT_ID_CACHE = (); # We're done. we can clear the cache
     return $data;
 }
 
+sub _show_template {
+	my $template = shift;
+  	my $INSIDE_TEMPLATE = shift;
+
+    my $callable =
+        ( ref($template) && $template->isa('Template::Declare::Tag') )
+        ? $template
+        : Template::Declare->has_template( $template, $INSIDE_TEMPLATE );
+
+    # If the template was not found let the user know.
+    unless ($callable) {
+        my $msg = "The template '$template' could not be found";
+        $msg .= " (it might be private)" if !$INSIDE_TEMPLATE;
+        carp $msg;
+        return '';
+    }
+
+    Template::Declare->new_buffer_frame;
+    &$callable($self);
+    my $content = Template::Declare->buffer->data;
+    Template::Declare->end_buffer_frame;
+    Template::Declare->buffer->append($content);
+
+}
 sub _escape_utf8 {
     my $val = shift;
     use bytes;
@@ -411,5 +543,27 @@ Jesse Vincent <jesse@bestpractical.com>
 Copyright 2006-2007 Best Practical Solutions, LLC
 
 =cut
+
+
+package Template::Declare::Tag;
+
+use overload '""' => \&stringify;
+
+sub stringify {
+    my $self = shift;
+
+    if (defined wantarray) { 
+    Template::Declare->new_buffer_frame;
+    my $returned =$self->();
+    my $content = Template::Declare->buffer->data();
+    Template::Declare->end_buffer_frame;
+    return ($content . $returned);
+    } else {
+
+        return $self->();
+    }
+}
+
+
 
 1;

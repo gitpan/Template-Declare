@@ -6,7 +6,7 @@ use Carp;
 package Template::Declare;
 use Template::Declare::Buffer;
 
-$Template::Declare::VERSION = "0.06";
+$Template::Declare::VERSION = "0.07";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -15,6 +15,7 @@ __PACKAGE__->mk_classdata('alias_prefixes');
 __PACKAGE__->mk_classdata('templates');
 __PACKAGE__->mk_classdata('private_templates');
 __PACKAGE__->mk_classdata('buffer_stack');
+__PACKAGE__->mk_classdata('imported_into');
 
 
 __PACKAGE__->roots([]);
@@ -200,7 +201,8 @@ content when available).
 sub show {
     my $class = shift;
     my $template = shift;
-    return Template::Declare::Tags::show($template);
+    local %Template::Declare::Tags::ELEMENT_ID_CACHE = () ;
+    return Template::Declare::Tags::show_page($template);
 }
 
 
@@ -236,6 +238,8 @@ sub import_templates {
     my $import_from_base = shift;
     my $prepend_path     = shift;
 
+    $import_from_base->imported_into($prepend_path);
+
     my @packages;
     {
         no strict 'refs';
@@ -260,6 +264,20 @@ sub import_templates {
         }
     }
 
+}
+
+=head2 path_for
+
+ Returns the path for the template name to be used for show, adjusted
+ with paths used in import_templates.
+
+=cut
+
+sub path_for {
+    my ($class, $template) = @_;
+    my $prepend = $class->imported_into;
+    $prepend = '' unless defined $prepend;
+    return $prepend . '/' . $template;
 }
 
 
@@ -411,6 +429,7 @@ sub _register_template {
     my $subname = shift;
     my $coderef = shift;
     no strict 'refs';
+    no warnings 'redefine';
     *{ $class . '::' . $subname } = $coderef;
 }
 

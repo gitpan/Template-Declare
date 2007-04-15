@@ -29,7 +29,7 @@ for (qw(content content_2 content_3 ) ){
 {
 Template::Declare->buffer->clear;
 my $simple =(show($_));
-ok($simple =~ 'This is my &lt;b&gt;content');
+ok($simple =~ 'This is my &lt;b&gt;content', $simple);
 ok_lint($simple);
 }
 }

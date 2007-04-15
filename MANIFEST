@@ -18,10 +18,14 @@ SIGNATURE
 t/99-pod.t
 t/aliasing.t
 t/arg-declaration-styles.t
+t/attributes.t
+t/closures.t
+t/duplicate_element_ids.t
 t/importing.t
 t/indexhtml.t
 t/private.t
 t/self.t
+t/smart_tag_wrapper.t
 t/subclassing.t
 t/subtemplates.t
 t/trivial.t

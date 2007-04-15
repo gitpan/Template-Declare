@@ -51,7 +51,8 @@ package main;
 use Template::Declare::Tags;
 Template::Declare->init(roots => ['Baseclass::UI', 'Wifty::UI']);
 
-use Test::More tests => 9;
+use Test::More tests => 11;
+use Test::Warn;
 require "t/utils.pl";
 
 {
@@ -72,12 +73,21 @@ Template::Declare->init(
 }
 
 {
-    my $simple = ( show('does_not_exist') );
+    my $simple;
+    warning_like
+      { $simple = ( show('does_not_exist') ); }
+      qr/could not be found.*private/,
+      "got warning";
     unlike( $simple , qr'This is my content' );
-    ok_lint($simple);
+    is ($simple, undef);
 }
+
 {
-    my $simple = ( show('private-content') );
+    my $simple;
+    warning_like
+      { $simple = ( show('private-content')||'' ); }
+      qr/could not be found.*private/,
+      "got warning";
     unlike( $simple , qr'This is my content', "Can't call private templates" );
     ok_lint($simple);
 }
