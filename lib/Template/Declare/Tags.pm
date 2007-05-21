@@ -8,12 +8,14 @@ use vars qw/@EXPORT @EXPORT_OK $PRIVATE $self/;
 use base 'Exporter';
 use Carp;
 
-@EXPORT = qw( with template private show attr outs outs_raw in_isolation $self under get_current_attr smart_tag_wrapper );
-push @EXPORT, qw(Tr td );    # these two warns the user to use row/cell instead
+@EXPORT
+    = qw( with template private show show_page attr outs outs_raw in_isolation $self under get_current_attr smart_tag_wrapper );
+push @EXPORT, qw(Tr td );   # these two warns the user to use row/cell instead
 
-our %ATTRIBUTES = ();
+our %ATTRIBUTES       = ();
 our %ELEMENT_ID_CACHE = ();
-our $DEPTH      = 0;
+our $TAG_NEST_DEPTH            = 0;
+our @TEMPLATE_STACK;
 
 =head1 NAME
 
@@ -43,16 +45,22 @@ sub template ($$) {
 
     # template "foo" ==> CallerPkg::_jifty_template_foo;
     # template "foo/bar" ==> CallerPkg::_jifty_template_foo/bar;
-    my $codesub = sub { local $self = $_[0] || $self || $template_class;
-			#local $self = $template_class unless $self;
-                        &$coderef($self) };
+    my $codesub = sub {
+        local $self = shift || $self || $template_class;
 
-    if (wantarray) { 
-        # We're being called by something like private that doesn't want us to register ourselves
+        #local $self = $template_class unless $self;
+        &$coderef($self,@_);
+    };
+
+    if (wantarray) {
+
+# We're being called by something like private that doesn't want us to register ourselves
         return ( $template_class, $template_name, $codesub );
     } else {
-        # We've been called in a void context and should register this template
-        Template::Declare::register_template( $template_class, $template_name, $codesub );
+
+       # We've been called in a void context and should register this template
+        Template::Declare::register_template( $template_class, $template_name,
+            $codesub );
     }
 
 }
@@ -62,7 +70,6 @@ sub template ($$) {
 C<private> declares that a template isn't available to be called directly from client code.
 
 =cut
-
 
 sub private (@) {
     my $class   = shift;
@@ -88,10 +95,9 @@ Example:
 
 =cut
 
-
 sub attr (&;@) {
     my $code = shift;
-    my @rv = $code->();
+    my @rv   = $code->();
     while ( my ( $field, $val ) = splice( @rv, 0, 2 ) ) {
 
         # only defined whle in a tag context
@@ -100,7 +106,6 @@ sub attr (&;@) {
     return @_;
 }
 
-
 =head2 outs STUFF
 
 C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s output buffer.
@@ -108,7 +113,7 @@ C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s ou
 
 =cut
 
-#sub outs { outs_raw( map { _escape_utf8($_); } grep {defined} @_ ); }
+#sub outs { outs_raw( map { _escape_html($_); } grep {defined} @_ ); }
 
 =head2 outs_raw STUFF
 
@@ -118,10 +123,8 @@ C<outs_raw> appends its arguments to C<Template::Declare>'s output buffer withou
 
 #sub outs_raw { Template::Declare->buffer->append( join( '', grep {defined} @_ )); return ''; }
 
-
-
-sub outs { _outs(0, @_); }
-sub outs_raw { _outs(1, @_); }
+sub outs     { _outs( 0, @_ ); }
+sub outs_raw { _outs( 1, @_ ); }
 
 sub _outs {
     my $raw     = shift;
@@ -132,15 +135,16 @@ sub _outs {
     foreach my $item ( grep {defined} @phrases ) {
 
         Template::Declare->new_buffer_frame;
-        my $returned = ref($item) eq 'CODE'
+        my $returned =
+            ref($item) eq 'CODE'
             ? $item->()
-            : ( $raw ? $item : _escape_utf8($item) ) ||'';
-        my $content = Template::Declare->buffer->data ||'';
+            : ( $raw ? $item : _escape_html($item) ) || '';
+        my $content = Template::Declare->buffer->data || '';
         Template::Declare->end_buffer_frame;
         Template::Declare->buffer->append( $content . $returned );
     }
 
-    $buf = Template::Declare->buffer->data ||'';
+    $buf = Template::Declare->buffer->data || '';
     Template::Declare->end_buffer_frame;
     if ( defined wantarray and not wantarray ) {
         return $buf;
@@ -168,7 +172,6 @@ our %TagAlternateSpelling = (
         '',    # Currently 'base' has no alternate spellings; simply ignore it
 );
 
-
 =head2 install_tag TAGNAME
 
 Sets up TAGNAME as a tag that can be used in user templates.
@@ -178,7 +181,6 @@ Out of the box, C<Template::Declare> installs  the :html2 :html3 :html4 :netscap
 
 
 =cut
-
 
 sub install_tag {
     my $tag  = lc( $_[0] );
@@ -199,7 +201,7 @@ sub install_tag {
             # Scalar context - return a coderef that represents ourselves.
             my @__    = @_;
             my $_self = $self;
-           my $sub =  sub {
+            my $sub   = sub {
                 local $self     = $_self;
                 local *__ANON__ = $tag;
                 _tag(@__);
@@ -219,7 +221,6 @@ our %TAGS = (
 );
 install_tag($_) for keys %TAGS;
 
-
 =head2 with
 
 C<with> is an alternative way to specify attributes for a tag:
@@ -236,7 +237,6 @@ The standard way to do this is:
 
 =cut
 
-
 sub with (@) {
     %ATTRIBUTES = ();
     while ( my ( $key, $val ) = splice( @_, 0, 2 ) ) {
@@ -244,9 +244,10 @@ sub with (@) {
         $ATTRIBUTES{$key} = $val;
 
         if ( lc($key) eq 'id' ) {
-            if ( $ELEMENT_ID_CACHE{$val}++) {
-            	warn "HTML appears to contain illegal duplicate element id: $val";
-	    }
+            if ( $ELEMENT_ID_CACHE{$val}++ ) {
+                warn
+                    "HTML appears to contain illegal duplicate element id: $val";
+            }
         }
 
     }
@@ -289,18 +290,17 @@ sub smart_tag_wrapper (&) {
     Template::Declare->new_buffer_frame;
 
     my $last = join '',    #
-      map { ref($_) ? $_ : _escape_utf8($_) }    #
-      $coderef->(%ATTRIBUTES);
+        map { ref($_) ? $_ : _escape_html($_) }    #
+        $coderef->(%ATTRIBUTES);
 
-    %ATTRIBUTES = ();                            # prevent leakage
+    %ATTRIBUTES = ();                              # prevent leakage
 
     if ( length( Template::Declare->buffer->data ) ) {
 
         # We concatenate to force scalarization when $last or
         # $Template::Declare->buffer is solely a Jifty::Web::Link
         $buf .= Template::Declare->buffer->data;
-    }
-    elsif ( length $last ) {
+    } elsif ( length $last ) {
         $buf .= $last;
     }
 
@@ -323,7 +323,7 @@ sub _tag {
     my $tag = $subroutine;
     $tag =~ s/^.*\:\://;
 
-    my $buf = "\n" . ( " " x $DEPTH ) . "<$tag"
+    my $buf = "\n" . ( " " x $TAG_NEST_DEPTH ) . "<$tag"
         . join( '',
         map { qq{ $_="} . ( $ATTRIBUTES{$_} || '' ) . qq{"} }
             sort keys %ATTRIBUTES );
@@ -352,16 +352,16 @@ sub _tag {
             my $field = shift;
             my $val   = shift;
 
-            $buf .= ' '. $field .q{="} .  _escape_utf8($val) .q{"};
+            $buf .= ' ' . $field . q{="} . _escape_html($val) . q{"};
             wantarray ? () : '';
         };
 
-        local $DEPTH = $DEPTH + 1;
+        local $TAG_NEST_DEPTH = $TAG_NEST_DEPTH + 1;
         %ATTRIBUTES = ();
         Template::Declare->new_buffer_frame;
-        my $last = join '', map { ref($_) ? $_ : _escape_utf8($_) } $code->();
+        my $last = join '', map { ref($_) ? $_ : _escape_html($_) } $code->();
 
-        if ( length(Template::Declare->buffer->data) ) {
+        if ( length( Template::Declare->buffer->data ) ) {
 
 # We concatenate to force scalarization when $last or $Template::Declare->buffer is solely a Jifty::Web::Link
             $buf .= '>' . Template::Declare->buffer->data;
@@ -372,27 +372,32 @@ sub _tag {
         } else {
             $had_content = 0;
         }
-        
+
         Template::Declare->end_buffer_frame;
 
     }
 
     if ($had_content) {
-        $buf .= "\n" . ( " " x $DEPTH ) if ( $buf =~ /\n/ );
+        $buf .= "\n" . ( " " x $TAG_NEST_DEPTH ) if ( $buf =~ /\>$/ );
         $buf .= "</$tag>";
-    } elsif ( $tag =~ m{\A(?: base | meta | link | hr | br | param | img | area | input | col )\z}x) {
+    } elsif ( $tag
+        =~ m{\A(?: base | meta | link | hr | br | param | img | area | input | col )\z}x
+        )
+    {
+
         # XXX TODO: This should come out of HTML::Tagset
         # EMPTY tags can close themselves.
-         $buf .= " />";
+        $buf .= " />";
     } else {
 
         # Otherwise we supply a closing tag.
         $buf .= "></$tag>";
     }
 
-
-    Template::Declare->buffer->append( $buf);
-    return (ref($more_code) && $more_code->isa('CODE')) ? $more_code->() : '';
+    Template::Declare->buffer->append($buf);
+    return ( ref($more_code) && $more_code->isa('CODE') )
+        ? $more_code->()
+        : '';
 }
 
 =head2 show [$template_name or $template_coderef] 
@@ -420,67 +425,93 @@ C<Template::Declare> package.
 =cut
 
 sub show {
-    my $template        = shift;
-    my $INSIDE_TEMPLATE = 0;
+    my $template = shift;
+    my $args  = \@_;
+    my $data;
 
     # if we're inside a template, we should show private templates
     if ( caller->isa('Template::Declare') ) {
-        $INSIDE_TEMPLATE = 1;
+       _show_template( $template, 1, $args );
+        return Template::Declare->buffer->data;
+    } else {
+        show_page( $template, $args);
     }
-    else {
-        Template::Declare->new_buffer_frame;
-    }
-    _show_template( $template, $INSIDE_TEMPLATE );
-    my $data = Template::Declare->buffer->data;
-    unless ($INSIDE_TEMPLATE) {
-        Template::Declare->end_buffer_frame;
-        %ELEMENT_ID_CACHE = ();
-    }
-    return $data;
 
 }
 
+
+
 sub show_page {
-    my $template = shift;
+    my $template        = shift;
+    my $args = \@_;
     my $INSIDE_TEMPLATE = 0;
 
     # if we're inside a template, we should show private templates
     Template::Declare->new_buffer_frame;
-    _show_template( $template, 0 );
+    _show_template( $template, 0, $args );
     my $data = Template::Declare->buffer->data;
     Template::Declare->end_buffer_frame;
-    Template::Declare->buffer->append($data); 
-    %ELEMENT_ID_CACHE = (); # We're done. we can clear the cache
+    %ELEMENT_ID_CACHE = ();    # We're done. we can clear the cache
+   if (not defined wantarray()) {  
+    
+    Template::Declare->buffer->append($data);
+    return undef;
+     } else {
     return $data;
+
+     }
+}
+
+sub _resolve_relative_template_path {
+    my $template = shift;
+
+    return $template unless ($template =~ '^\.');
+    my $parent = $TEMPLATE_STACK[-1];
+  
+    my @parent = split('/',$parent);
+    my @template = split('/',$template);
+
+    if ($template[0] eq '.') {
+        shift @template; # get rid of the . 
+        pop @parent; # Get rid of the parent's tempalte name
+        return (join('/', @parent, @template));
+    }
+
+
+
 }
 
 sub _show_template {
-	my $template = shift;
-  	my $INSIDE_TEMPLATE = shift;
+    my $template        = shift;
+    my $inside_template = shift;
+    my $args = shift;
+    local @TEMPLATE_STACK  = @TEMPLATE_STACK;
+    $template = _resolve_relative_template_path($template);
+    push @TEMPLATE_STACK, $template;
+
 
     my $callable =
         ( ref($template) && $template->isa('Template::Declare::Tag') )
         ? $template
-        : Template::Declare->has_template( $template, $INSIDE_TEMPLATE );
+        : Template::Declare->resolve_template( $template, $inside_template );
 
     # If the template was not found let the user know.
     unless ($callable) {
         my $msg = "The template '$template' could not be found";
-        $msg .= " (it might be private)" if !$INSIDE_TEMPLATE;
+        $msg .= " (it might be private)" if !$inside_template;
         carp $msg;
         return '';
     }
 
     Template::Declare->new_buffer_frame;
-    &$callable($self);
+    &$callable($self, @$args);
     my $content = Template::Declare->buffer->data;
     Template::Declare->end_buffer_frame;
     Template::Declare->buffer->append($content);
-
 }
-sub _escape_utf8 {
+
+sub _escape_html {
     my $val = shift;
-    use bytes;
     no warnings 'uninitialized';
     $val =~ s/&/&#38;/g;
     $val =~ s/</&lt;/g;
@@ -515,7 +546,8 @@ Template::Declare::Tags uses C<row> and C<cell> for table definitions rather tha
 =cut
 
 sub Tr (&) {
-    die "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
+    die
+        "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
 }
 
 =head2 td
@@ -526,9 +558,9 @@ Template::Declare::Tags uses C<row> and C<cell> for table definitions rather tha
 =cut
 
 sub td (&) {
-    die "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
+    die
+        "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
 }
-
 
 =head1 SEE ALSO
 
@@ -544,7 +576,6 @@ Copyright 2006-2007 Best Practical Solutions, LLC
 
 =cut
 
-
 package Template::Declare::Tag;
 
 use overload '""' => \&stringify;
@@ -552,18 +583,16 @@ use overload '""' => \&stringify;
 sub stringify {
     my $self = shift;
 
-    if (defined wantarray) { 
-    Template::Declare->new_buffer_frame;
-    my $returned =$self->();
-    my $content = Template::Declare->buffer->data();
-    Template::Declare->end_buffer_frame;
-    return ($content . $returned);
+    if ( defined wantarray ) {
+        Template::Declare->new_buffer_frame;
+        my $returned = $self->();
+        my $content  = Template::Declare->buffer->data();
+        Template::Declare->end_buffer_frame;
+        return ( $content . $returned );
     } else {
 
         return $self->();
     }
 }
-
-
 
 1;

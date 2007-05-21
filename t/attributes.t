@@ -47,7 +47,7 @@ Template::Declare->init(roots => ['Wifty::UI']);
 use Test::More tests => 10;
 require "t/utils.pl";
 {
-    my $simple = (show('attr_with_one_arg'));
+    my $simple = (show_page('attr_with_one_arg'));
     ok($simple =~ m{^\s*<div\s+id="id">\s*<p>\s*This is my content\s*</p>\s*</div>\s*$}s);
     #diag ($simple);
     ok_lint($simple);
@@ -55,7 +55,7 @@ require "t/utils.pl";
 Template::Declare->buffer->clear;
 
 {
-    my $simple = (show('attr_with_two_args'));
+    my $simple = (show_page('attr_with_two_args'));
     ok($simple =~ m{^\s*<div\s+id="id">\s*<p>\s*This is my content\s*</p>\s*</div>\s*$}s);
     #diag ($simple);
     ok_lint($simple);
@@ -63,7 +63,7 @@ Template::Declare->buffer->clear;
 Template::Declare->buffer->clear;
 
 {
-    my $simple = (show('attr_with_many_args'));
+    my $simple = (show_page('attr_with_many_args'));
     ok($simple =~ m{^\s*
         <div\s+id="id">\s*
         <p>\s*This\sis\smy\scontent\s*</p>\s*
@@ -76,7 +76,7 @@ Template::Declare->buffer->clear;
 Template::Declare->buffer->clear;
 
 {
-    my $simple = (show('with'));
+    my $simple = (show_page('with'));
     ok($simple =~ m{^\s*<div\s+id="id">\s*<p>\s*This is my content\s*</p>\s*</div>\s*$}s);
     #diag ($simple);
     ok_lint($simple);
@@ -84,7 +84,7 @@ Template::Declare->buffer->clear;
 Template::Declare->buffer->clear;
 
 {
-    my $simple = (show('with_with_two_blocks'));
+    my $simple = (show_page('with_with_two_blocks'));
     ok($simple =~ m{^\s*
         <div\s+id="id">\s*<p>\s*This\sis\smy\scontent\s*</p>\s*</div>\s*
         <div>\s*<p>\s*another\sparagraph\s*</p>\s*</div>\s*

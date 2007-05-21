@@ -14,42 +14,42 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 03abe3b89014989e10e8ed327fd5aa732b80c4c7 Changes
+SHA1 1a6068ac5f0622fc355e7f3305997861f9359d56 Changes
 SHA1 3296277f43a6b0fa24f9a69adef25ff005a93ec4 MANIFEST
-SHA1 f69e5e4e9247ea9b9c8b00de7e5aafbe1826676d META.yml
+SHA1 d6f70c121ab03e185cad82225eb420fcee05d950 META.yml
 SHA1 b7e9f53056cd0580ecf2fb753fc3c3452e9648a9 Makefile.PL
 SHA1 ac88cc91e2e25f60aec5d1a7b736c12a55641787 README
-SHA1 9b2f9d83bcf77860f53a0c07c90a4a59ad9f5df1 inc/Module/Install.pm
-SHA1 abe32855d75ab13747cf65765af9947b7a8c3057 inc/Module/Install/Base.pm
-SHA1 95b81d1e91bd634467bf633571eff4420e9c04eb inc/Module/Install/Can.pm
-SHA1 1fe98c63cf9d7271c8cb4183ba230f152df69e26 inc/Module/Install/Fetch.pm
-SHA1 2249171a2b72cd73ff2c0a06597d29f86e5df456 inc/Module/Install/Makefile.pm
-SHA1 381bb98ea3877bba49ae85e7a7ea130645fd3dbf inc/Module/Install/Metadata.pm
-SHA1 0c2118868ef82ac517eb6d9c3bd93e6eb9bbf83e inc/Module/Install/Win32.pm
-SHA1 e827d6d43771032fa3df35c0ad5e5698d0e54cda inc/Module/Install/WriteAll.pm
-SHA1 5fb65e7254ac8a165b2107cccd21bfde0c763b61 lib/Template/Declare.pm
-SHA1 2a2fc392890d9eedead546a017302e8dc1b4d033 lib/Template/Declare/Buffer.pm
-SHA1 c189a3924b09db60d2136cc8a35aaa976491941a lib/Template/Declare/Tags.pm
+SHA1 ceac99579ef3914de1936417282842c07d907a6a inc/Module/Install.pm
+SHA1 6c9471c92c28e247fb84f4ab7dc277f68b33ea95 inc/Module/Install/Base.pm
+SHA1 b2cb1026330e8c4f8533c79569498ab15f189d86 inc/Module/Install/Can.pm
+SHA1 78acbad45c4289c228ead2278fc213ddd66bcead inc/Module/Install/Fetch.pm
+SHA1 642e5b27f4cbbbe440e5dc05c639f5fb79875fe3 inc/Module/Install/Makefile.pm
+SHA1 80d024f3eccf1c825b02b5e59de236b0af7d4bfc inc/Module/Install/Metadata.pm
+SHA1 fe6780ea5cfd67c79140699fbd4f0fe262255d57 inc/Module/Install/Win32.pm
+SHA1 51d43bffcfd7ffdecb8c8e9f97f3896c31b2e1b2 inc/Module/Install/WriteAll.pm
+SHA1 076c14e359cf04778add4c8be40ec63a0533047d lib/Template/Declare.pm
+SHA1 cda57f845c6f55def5d46620e030ed08eda9d91e lib/Template/Declare/Buffer.pm
+SHA1 671fe07b00fe2beeb3c1d01e505d1af4f6190a4d lib/Template/Declare/Tags.pm
 SHA1 bb0da54f2b3f2d7955baa41ee458cb3d1887f475 t/99-pod.t
-SHA1 24776888683d0119027c87201cee98edbb5d7172 t/aliasing.t
-SHA1 69afcad91f98cee7aae476d7925cfa8a8e031b11 t/arg-declaration-styles.t
-SHA1 24db30148a533cad721cb88cb0934cefbd506214 t/attributes.t
-SHA1 cfe5e9a1d49b9c9a8a1ac8578332c7a0074f48fb t/closures.t
+SHA1 deb55b4ed7eec5eb29479f047ca9759c76a8b803 t/aliasing.t
+SHA1 d1f4df2c09918ac0b104c4bab005910d896c2708 t/arg-declaration-styles.t
+SHA1 f4924dcec2850125f5eeda4a40525ae3b4d46c76 t/attributes.t
+SHA1 ced0409f2bcdf847d521e8664bd045442f51df49 t/closures.t
 SHA1 94c78c32ac1e16780ff2dd09c6f3b734035f83ac t/duplicate_element_ids.t
 SHA1 c06058b5de4bed61e600e91a475e021e8999da6f t/importing.t
 SHA1 bcc7853609975acb08bb40e65901a63268e378ca t/indexhtml.t
-SHA1 d144de377d45543374f2934462de20e16c4539e4 t/private.t
+SHA1 0c00d095bb6ff6fd9d493e8c2ae0f45aa002072b t/private.t
 SHA1 de23aec78ebc456083d8df85cf11d520bb03544f t/self.t
 SHA1 613d76b8b76c74002da8dff2866539b991b0505a t/smart_tag_wrapper.t
-SHA1 144b47a435c0d84124ddccc69134a4aec60d8b6d t/subclassing.t
-SHA1 5b50f7aa3a1ccab318b7418ffcd70e1fdce41189 t/subtemplates.t
-SHA1 84d0637de826c842d5e00684c2d50494719b6819 t/trivial.t
-SHA1 dde3268bba42de1aa10eb76557c86ccfa7d315a9 t/utils.pl
+SHA1 adc48b3337a1f468555afbb6bc9f69eda0eca46a t/subclassing.t
+SHA1 5bf9c06c76830580e6c402ccea5755201a363a5f t/subtemplates.t
+SHA1 1b3c4feef857534d3df92402360908c9021de2cd t/trivial.t
+SHA1 888d388aac364fc1c07fc6d5e0ca5be67d41e46d t/utils.pl
 SHA1 c07bcff77839e622b8b1ecffd492f5ccf0ab359c t/xss.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.3 (Darwin)
 
-iD8DBQFGIj8DEi9d9xCOQEYRAmJCAKCHf+mI2DG14UTePPnQP+6n10QofgCcC0tF
-WNfcKJp0p1JpbHK0UanoIMY=
-=nlIz
+iD8DBQFGUQdUEi9d9xCOQEYRAhtEAJ9vatMjAhTsUNgiXOWvuiTwpVroqgCdElVJ
+HFYWRsRPJladfoyE3WV/wvo=
+=JWb+
 -----END PGP SIGNATURE-----

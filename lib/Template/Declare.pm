@@ -6,27 +6,27 @@ use Carp;
 package Template::Declare;
 use Template::Declare::Buffer;
 
-$Template::Declare::VERSION = "0.07";
+$Template::Declare::VERSION = "0.20";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
 __PACKAGE__->mk_classdata('aliases');
-__PACKAGE__->mk_classdata('alias_prefixes');
+__PACKAGE__->mk_classdata('alias_metadata');
 __PACKAGE__->mk_classdata('templates');
 __PACKAGE__->mk_classdata('private_templates');
 __PACKAGE__->mk_classdata('buffer_stack');
 __PACKAGE__->mk_classdata('imported_into');
 
-
-__PACKAGE__->roots([]);
-__PACKAGE__->aliases([]);
-__PACKAGE__->alias_prefixes({});
-__PACKAGE__->templates({});
-__PACKAGE__->private_templates({});
-__PACKAGE__->buffer_stack([]);
+__PACKAGE__->roots( [] );
+__PACKAGE__->aliases(           {} );
+__PACKAGE__->alias_metadata(    {} );
+__PACKAGE__->templates(         {} );
+__PACKAGE__->private_templates( {} );
+__PACKAGE__->buffer_stack( [] );
 
 __PACKAGE__->new_buffer_frame();
 
+use vars qw/$TEMPLATE_VARS/;
 
 =head1 NAME
 
@@ -159,30 +159,30 @@ This I<class method> initializes the C<Template::Declare> system.
 
 sub init {
     my $class = shift;
-    my %args = (@_);
+    my %args  = (@_);
 
-    if ($args{'roots'}) {
-        $class->roots($args{'roots'});
+    if ( $args{'roots'} ) {
+        $class->roots( $args{'roots'} );
     }
 
 }
 
-
 sub new_buffer_frame {
     my $buffer = Template::Declare::Buffer->new();
-    unshift @{__PACKAGE__->buffer_stack}, $buffer;
+    unshift @{ __PACKAGE__->buffer_stack }, $buffer;
 
 }
 
 sub end_buffer_frame {
-    shift @{__PACKAGE__->buffer_stack};
+    shift @{ __PACKAGE__->buffer_stack };
 }
 
 sub buffer {
-    unless (__PACKAGE__->buffer_stack->[0] ) { Carp::confess(__PACKAGE__."->buffer called with no buffer");}
-    return __PACKAGE__->buffer_stack->[0] ;
+    unless ( __PACKAGE__->buffer_stack->[0] ) {
+        Carp::confess( __PACKAGE__ . "->buffer called with no buffer" );
+    }
+    return __PACKAGE__->buffer_stack->[0];
 }
-
 
 =head2 show TEMPLATE_NAME
 
@@ -199,12 +199,11 @@ content when available).
 =cut
 
 sub show {
-    my $class = shift;
+    my $class    = shift;
     my $template = shift;
-    local %Template::Declare::Tags::ELEMENT_ID_CACHE = () ;
-    return Template::Declare::Tags::show_page($template);
+    local %Template::Declare::Tags::ELEMENT_ID_CACHE = ();
+    return Template::Declare::Tags::show_page($template => \@_);
 }
-
 
 =head2 alias
 
@@ -213,15 +212,23 @@ sub show {
 =cut
 
 sub alias {
-    my $alias_into      = caller(0);
-    my $mixin = shift;
-    my $prepend_path     = shift;
+    my $alias_into   = caller(0);
+    my $mixin        = shift;
+    my $prepend_path = shift;
+    my $package_vars = shift;
 
-    push @{$alias_into->aliases()}, $mixin ;
-    $alias_into->alias_prefixes()->{$mixin} =  $prepend_path;
+    $prepend_path =~ s|/+/|/|g;
+    $prepend_path =~ s|/$||;
+
+    my $alias_key = $mixin . " " . $prepend_path;
+    push @{ Template::Declare->aliases->{$alias_into} }, $alias_key;
+    $alias_into->alias_metadata()->{$alias_key} = {
+        class        => $mixin,
+        path         => $prepend_path,
+        package_vars => $package_vars
+    };
 
 }
-
 
 =head2 import_templates
 
@@ -231,13 +238,14 @@ sub alias {
 
 =cut
 
-
 sub import_templates {
     return undef if $_[0] eq 'Template::Declare';
     my $import_into      = caller(0);
     my $import_from_base = shift;
     my $prepend_path     = shift;
 
+    $prepend_path =~ s|/+/|/|g;
+    $prepend_path =~ s|/$||;
     $import_from_base->imported_into($prepend_path);
 
     my @packages;
@@ -246,27 +254,19 @@ sub import_templates {
         @packages = ( @{ $import_from_base . "::ISA" }, $import_from_base );
     }
     foreach my $import_from (@packages) {
-        foreach my $template_name (
-            @{ __PACKAGE__->templates()->{$import_from} } ) {
-            $import_into->register_template(
-                $prepend_path . "/" . $template_name,
-                $import_from->_find_template_sub(
-                    _template_name_to_sub($template_name)
-                )
-            );
+        foreach my $template_name ( @{ __PACKAGE__->templates()->{$import_from} } ) {
+            my $code = $import_from->_find_template_sub( _template_name_to_sub($template_name));
+            $import_into->register_template( $prepend_path . "/" . $template_name, $code );
         }
-        foreach my $template_name (
-            @{ __PACKAGE__->private_templates()->{$import_from} } ) {
-            my $code = $import_from->_find_template_sub(
-                _template_name_to_private_sub($template_name) );
-            $import_into->register_private_template(
-                $prepend_path . "/" . $template_name, $code );
+        foreach my $template_name ( @{ __PACKAGE__->private_templates()->{$import_from} } ) {
+            my $code = $import_from->_find_template_sub( _template_name_to_private_sub($template_name) );
+            $import_into->register_private_template( $prepend_path . "/" . $template_name, $code );
         }
     }
 
 }
 
-=head2 path_for
+=head2 path_for $template
 
  Returns the path for the template name to be used for show, adjusted
  with paths used in import_templates.
@@ -274,46 +274,68 @@ sub import_templates {
 =cut
 
 sub path_for {
-    my ($class, $template) = @_;
-    my $prepend = $class->imported_into;
-    $prepend = '' unless defined $prepend;
-    return $prepend . '/' . $template;
+    my $class = shift;
+    my $template = shift;
+    return ($class->imported_into ||'') . '/' . $template;
 }
-
 
 =head2 has_template PACKAGE TEMPLATE_NAME SHOW_PRIVATE
 
 Takes a package, template name and a boolean. The boolean determines whether to show private templates.
 
-Returns a reference to the template's code if found. Otherwise, 
-returns undef.
+Returns a reference to the template's code if found. Otherwise, returns undef.
+
+This method is an alias for L</resolve_template>
 
 =cut
 
 sub has_template {
-    # When using Template::Declare->has_template, find in all
-    # registered namespaces.
-    goto \&resolve_template if $_[0] eq 'Template::Declare';
+   return resolve_template(@_);
+}
+
+sub _has_template {
 
     # Otherwise find only in specific package
     my $pkg           = shift;
     my $template_name = shift;
     my $show_private  = 0 || shift;
 
-    if ( my $coderef
-        = $pkg->_find_template_sub(
-            _template_name_to_sub($template_name) ) ) {
+    if ( my $coderef = $pkg->_find_template_sub( _template_name_to_sub($template_name) ) ) {
         return $coderef;
-    }
-    elsif (
-        $show_private
-        and $coderef = $pkg->_find_template_sub(
-            _template_name_to_private_sub($template_name)
-        ) ) {
+    } elsif ( $show_private and $coderef = $pkg->_find_template_sub( _template_name_to_private_sub($template_name))) {
         return $coderef;
     }
 
     return undef;
+}
+
+sub _has_aliased_template {
+    my $package       = shift;
+    my $template_name = shift;
+    my $show_private  = shift;
+
+    foreach my $alias_key ( @{ Template::Declare->aliases->{$package} } ) {
+        my $alias_info   = $package->alias_metadata()->{$alias_key};
+        my $alias_prefix = $alias_info->{path};
+        my $alias_class  = $alias_info->{class};
+        my $package_vars = $alias_info->{package_vars};
+
+        $template_name = "/$template_name";
+
+        if ( $template_name =~ m{$alias_prefix/(.*)$} ) {
+            my $dispatch_to_template = $1;
+            if (my $coderef = $alias_class->resolve_template( $dispatch_to_template, $show_private)) {
+
+                return sub {
+                    shift @_;  # Get rid of the passed-in "$self" class.
+                    local $TEMPLATE_VARS->{$alias_class} = $package_vars;
+                    &$coderef($alias_class,@_);
+                };
+            }
+
+        }
+
+    }
 }
 
 =head2 resolve_template TEMPLATE_PATH INCLUDE_PRIVATE_TEMPLATES
@@ -330,59 +352,53 @@ template we're looking for.
 
 =cut
 
-
 sub resolve_template {
     my $self          = shift;
     my $template_name = shift;
     my $show_private  = shift || 0;
 
-    foreach my $package ( reverse @{ Template::Declare->roots } ) {
-        unless ($package and $package->isa('Template::Declare')) {
-            warn "'@{[$package||'']} was listed as a Template::Declare root, but is not a Template::Declare subclass";
-            next;
-        }
+    my @search_packages;
 
-        if ( my $coderef = $package->has_template( $template_name, $show_private ) ) {
+    # If we're being called as a class method on T::D it means "search in any package"
+    # Otherwise, it means search only in this specific package"
+    if ( $self eq 'Template::Declare' ) {
+        @search_packages = reverse @{ Template::Declare->roots };
+    } else {
+        @search_packages = ($self);
+    }
+
+    foreach my $package (@search_packages) {
+        next unless ( $package and $package->isa('Template::Declare') ); 
+        if ( my $coderef = $package->_has_template( $template_name, $show_private ) ) {
+            return $coderef;
+        } elsif (  $coderef = $package->_has_aliased_template($template_name, $show_private) ) {
             return $coderef;
         }
-
-        foreach my $alias_class ( @{ $package->aliases } ) {
-            my $alias_prefix = $package->alias_prefixes()->{$alias_class};
-            $template_name = "/$template_name";
-            if ( $template_name =~ m{$alias_prefix/(.*)$} ) {
-                my $dispatch_to_template = $1;
-                if (my $coderef = $alias_class->has_template( $dispatch_to_template, $show_private)) {
-                    # We're going to force $self to the aliased class
-                    return sub {  &$coderef($alias_class) };
-                }
-            }
-        }
     }
-    return undef;
 }
 
 
 sub _find_template_sub {
-    my $self = shift;
+    my $self    = shift;
     my $subname = shift;
     return $self->can($subname);
 }
 
 sub _template_name_to_sub {
-    return _subname( "_jifty_template_", shift);
+    return _subname( "_jifty_template_", shift );
 
 }
 
 sub _template_name_to_private_sub {
-    return _subname( "_jifty_private_template_", shift);
+    return _subname( "_jifty_private_template_", shift );
 }
 
 sub _subname {
     my $prefix = shift;
-    my $template = shift ||'';
-    $template =~ s{^/+}{};
+    my $template = shift || '';
     $template =~ s{/+}{/}g;
-    return join ('', $prefix,$template);
+    $template =~ s{^/}{};
+    return join( '', $prefix, $template );
 }
 
 =head2 register_template PACKAGE TEMPLATE_NAME CODEREF
@@ -418,8 +434,7 @@ sub register_private_template {
     my $template_name = shift;
     my $code          = shift;
     push @{ __PACKAGE__->private_templates()->{$class} }, $template_name;
-    _register_template( $class, _template_name_to_private_sub($template_name),
-        $code );
+    _register_template( $class, _template_name_to_private_sub($template_name), $code );
 
 }
 
@@ -433,8 +448,23 @@ sub _register_template {
     *{ $class . '::' . $subname } = $coderef;
 }
 
+sub package_variable {
+    my $self = shift;
+    my $var  = shift;
+    if (@_) {
+        $TEMPLATE_VARS->{$self}->{$var} = shift;
+    }
+    return $TEMPLATE_VARS->{$self}->{$var};
+}
 
-
+sub package_variables {
+    my $self = shift;
+    my $var  = shift;
+    if (@_) {
+        %{ $TEMPLATE_VARS->{$self} } = shift;
+    }
+    return $TEMPLATE_VARS->{$self};
+}
 
 =head1 BUGS
 

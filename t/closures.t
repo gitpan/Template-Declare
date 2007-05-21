@@ -5,7 +5,7 @@ use strict;
 package TestApp::UI;
 use base qw/Template::Declare/;
 use Template::Declare::Tags;
-use Test::More tests => 18;
+use Test::More tests => 16;
 
 
 template simple => sub {
@@ -39,21 +39,21 @@ template closure_2 => sub {
 
 template closure_3 => sub {
     my $item = b { 'Bolded'};
-    i { outs($item)};
+    i { outs_raw($item)};
 };
 
 template closure_4 => sub {
     my $item = b { 'Bolded'};
-    i { outs("My ". $item)};
+    i { "My ". $item};
 };
 
 template closure_5 => sub {
     my $item = b { 'Bolded'};
-    i { outs("My " , $item)};
+    i { "My " , $item};
 };
 
 template closure_6 => sub {
-                        outs('I decided to do ', i{'Something else'}, ' rather than ');
+                        outs('I decided to do '), i{'Something else'}, outs(' rather than ')
 
 };
 
@@ -85,7 +85,6 @@ ok_lint($simple);
 Template::Declare->buffer->clear;
 Template::Declare->show('simple');
 ok(Template::Declare->buffer->data() =~ 'This is my content');
-#diag ($simple);
 ok_lint(Template::Declare->buffer->data());
 }
 
@@ -98,19 +97,16 @@ like($simple, qr/<i>\s*<b>\s*Bolded\s*<\/b>\s*<\/i>/ms, "$_ matched");
 ok_lint($simple);
 }
 
-TODO: {
-local $TODO = 'Need some help figuring out how to make closures work';
 for (qw(closure_3)) {
 Template::Declare->buffer->clear;
 my $simple = Template::Declare->show($_);
 #diag ($simple);
 like($simple, qr/<i>\s*<b>\s*Bolded\s*<\/b>\s*<\/i>/ms, "$_ matched");
 ok_lint($simple);
-}
 
 
 
-for (qw(closure_4 closure_5)) {
+for (qw(closure_5)) {
 Template::Declare->buffer->clear;
 my $simple = Template::Declare->show($_);
 ok($simple =~ /<i>My\s*<b>Bolded\s*<\/b>\s*<\/i>/ms, "Showed $_");
@@ -123,7 +119,7 @@ ok_lint(Template::Declare->buffer->data());
 Template::Declare->buffer->clear;
 my $simple = Template::Declare->show('closure_6');
 ok($simple =~ /I decided to do\s*<i>\s*Something else\s*<\/i>/);
-diag ($simple);
+#diag ($simple);
 ok_lint(Template::Declare->buffer->data());
 }
 

@@ -16,7 +16,7 @@ template simple => sub {
 };
 
 private template 'private-content' => sub {
-    with( id => 'body' ), div {
+    with( id => 'private-content-body' ), div {
         outs('This is my content');
     };
 
@@ -24,7 +24,7 @@ private template 'private-content' => sub {
 
 
 private template 'other-content' => sub {
-    with( id => 'body' ), div {
+    with( id => 'other-content-body' ), div {
         outs('This is other content');
     };
 
@@ -80,7 +80,6 @@ require "t/utils.pl";
 
 {
     my $simple;
-      $simple = ( Template::Declare->show('private-content') ); 
     warning_like
       { $simple = ( Template::Declare->show('private-content') ); }
       qr/could not be found.*private/,

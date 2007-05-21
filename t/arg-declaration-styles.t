@@ -69,14 +69,16 @@ require "t/utils.pl";
 Template::Declare->init(roots => ['TestApp::UI']);
 
 for (qw(content content_curly content_explicit)) {
-    ok_content( show($_), $_ );
+Template::Declare->buffer->clear;
+    ok_content( show_page($_), $_ );
 }
 
 for (
     qw(content_mixed1 content_mixed2 content_attrs content_withs content_curlies)
   )
 {
-    ok_multicontent( show($_), $_ );
+Template::Declare->buffer->clear;
+    ok_multicontent( show_page($_), $_ );
 }
 
 sub ok_multicontent {

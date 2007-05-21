@@ -159,9 +159,7 @@ ok_lint($simple);
 }
 {
 Template::Declare->buffer->clear;
-my $ret = Template::Declare->show('simple');
-#diag $ret;
-#diag (Template::Declare->buffer->data());
+ Template::Declare->show('simple');
 ok(Template::Declare->buffer->data() =~ 'This is my content', "show simple filled the buffer");
 #diag ($simple);
 ok_lint(Template::Declare->buffer->data());

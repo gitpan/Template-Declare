@@ -1,4 +1,202 @@
 ----------------------------------------------------------------------
+r57011 (orig r3279):  jesse | 2007-05-20 22:09:57 -0400
+
+ r57010@pinglin:  jesse | 2007-05-20 22:09:31 -0400
+ * chmrr++ noticed a bit of extra debugging info
+
+----------------------------------------------------------------------
+r57003 (orig r3275):  jesse | 2007-05-20 20:16:26 -0400
+
+ r57000@pinglin:  jesse | 2007-05-20 20:15:49 -0400
+ * Allow calling "show" with arguments
+ 
+
+----------------------------------------------------------------------
+r57002 (orig r3274):  jesse | 2007-05-20 20:16:13 -0400
+
+ r56999@pinglin:  jesse | 2007-05-20 19:16:38 -0400
+ * Be a little bit brighter about whether we should be appending to the TD buffer or returning the content.  Never do both.
+
+----------------------------------------------------------------------
+r56998 (orig r3272):  jesse | 2007-05-20 17:51:35 -0400
+
+ r56997@pinglin:  jesse | 2007-05-20 17:51:13 -0400
+  * made relative template paths work
+
+----------------------------------------------------------------------
+r56996 (orig r3271):  jesse | 2007-05-20 16:28:52 -0400
+
+ r56995@232:  jesse | 2007-05-20 16:28:32 -0400
+ * Tag nesting cleanups. Now don't introduce extra whitespace (newlines and spaces) at the ends of a tag
+
+----------------------------------------------------------------------
+r56994 (orig r3270):  jesse | 2007-05-20 16:22:24 -0400
+
+ r56992@232:  jesse | 2007-05-20 16:21:55 -0400
+ * minor refactoring
+
+----------------------------------------------------------------------
+r56993 (orig r3269):  jesse | 2007-05-20 16:22:17 -0400
+
+ r56991@232:  jesse | 2007-05-20 15:52:10 -0400
+ minor refacotring
+
+----------------------------------------------------------------------
+r56990 (orig r3268):  jesse | 2007-05-20 15:35:56 -0400
+
+ r56989@232:  jesse | 2007-05-20 15:35:32 -0400
+ * mnore minor simplifications. Working ot decrease needless complexity
+ 
+ 
+
+----------------------------------------------------------------------
+r56988 (orig r3267):  jesse | 2007-05-20 15:26:22 -0400
+
+ r56987@232:  jesse | 2007-05-20 15:25:58 -0400
+ more cleanup
+
+----------------------------------------------------------------------
+r56986 (orig r3266):  jesse | 2007-05-20 15:21:47 -0400
+
+ r56984@232:  jesse | 2007-05-20 15:21:14 -0400
+ * Refactoring to remove redundant code
+ 
+
+----------------------------------------------------------------------
+r56985 (orig r3265):  jesse | 2007-05-20 15:21:39 -0400
+
+ r56983@232:  jesse | 2007-05-20 15:21:06 -0400
+ * fixed test count 
+
+----------------------------------------------------------------------
+r56982 (orig r3264):  jesse | 2007-05-20 03:56:06 -0400
+
+ r56981@pinglin:  jesse | 2007-05-20 03:54:21 -0400
+ * Tests for new relative template calling syntax
+ 
+
+----------------------------------------------------------------------
+r56980 (orig r3263):  jesse | 2007-05-19 16:17:40 -0400
+
+ r56979@pinglin:  jesse | 2007-05-19 16:17:20 -0400
+  * refactor refactor ok
+
+----------------------------------------------------------------------
+r56978 (orig r3262):  jesse | 2007-05-19 15:57:16 -0400
+
+ r56977@pinglin:  jesse | 2007-05-19 15:56:57 -0400
+ * Test suite now actually tests the warnings we expect to provide
+
+----------------------------------------------------------------------
+r56976 (orig r3261):  jesse | 2007-05-19 15:43:30 -0400
+
+ r56974@pinglin:  jesse | 2007-05-19 15:43:02 -0400
+ * Test suite cleanup
+
+----------------------------------------------------------------------
+r56975 (orig r3260):  jesse | 2007-05-19 15:43:22 -0400
+
+ r56973@pinglin:  jesse | 2007-05-19 15:13:55 -0400
+  perltidy
+
+----------------------------------------------------------------------
+r56808 (orig r3234):  jesse | 2007-05-12 03:11:44 -0400
+
+ r56807@pinglin:  jesse | 2007-05-12 03:11:35 -0400
+ Allow recursive aliasing.
+
+----------------------------------------------------------------------
+r56806 (orig r3233):  jesse | 2007-05-12 01:25:52 -0400
+
+ r56805@pinglin:  jesse | 2007-05-12 01:25:45 -0400
+  deep import tests
+
+----------------------------------------------------------------------
+r56804 (orig r3232):  jesse | 2007-05-12 01:25:37 -0400
+
+ r56803@pinglin:  jesse | 2007-05-12 00:37:02 -0400
+  Tests to show that recursive aliasing breaks
+
+----------------------------------------------------------------------
+r56792 (orig r3228):  jesse | 2007-05-11 18:15:31 -0400
+
+ r56786@pinglin:  jesse | 2007-05-11 18:15:20 -0400
+  * make the import and alias method be extra-slash agnostic
+
+----------------------------------------------------------------------
+r56762 (orig r3214):  jesse | 2007-05-07 22:05:51 -0400
+
+ r56761@pinglin:  jesse | 2007-05-07 22:05:40 -0400
+ * First pass at package variables for templates
+
+----------------------------------------------------------------------
+r56760 (orig r3213):  jesse | 2007-05-07 21:23:49 -0400
+
+ r56759@pinglin:  jesse | 2007-05-07 21:23:39 -0400
+ * Reabstracting a bit to support setting variables on aliases template libs
+
+----------------------------------------------------------------------
+r56758 (orig r3212):  jesse | 2007-05-07 20:16:02 -0400
+
+ r56756@pinglin:  jesse | 2007-05-07 20:07:43 -0400
+ * typo in test count
+
+----------------------------------------------------------------------
+r56757 (orig r3211):  jesse | 2007-05-07 20:15:54 -0400
+
+ r56755@pinglin:  jesse | 2007-05-07 20:07:18 -0400
+ * makde the closure tests use the proper syntax (and hence actually pass)
+
+----------------------------------------------------------------------
+r56734 (orig r3195):  ruz | 2007-05-05 21:22:36 -0400
+
+* drop 'use bytes' as it actually breaks utf8 strings.
+
+If we're in bytes mode and had a string with UTF-8 flag set
+then after escaping we'll get a string without flag, but it
+still would be valid UTF-8 and must have flag set. Effect
+is not obviouse at this step, but later if you'll try to
+concatenate the result with a flagged UTF-8 string then perl
+"auto-upgrade" the result using 'latin1 -> UTF-8' transformation
+applied to your valid UTF-8 string and you'll get corruption.
+
+* tests
+
+----------------------------------------------------------------------
+r56717 (orig r3192):  ruz | 2007-05-02 19:48:55 -0400
+
+* add simple tests for utf8 happines
+----------------------------------------------------------------------
+r55442 (orig r3129):  jesse | 2007-04-15 11:05:41 -0400
+
+ r55437@pinglin:  jesse | 2007-04-15 11:04:41 -0400
+  manifest update
+
+----------------------------------------------------------------------
+r55441 (orig r3128):  jesse | 2007-04-15 11:05:37 -0400
+
+ r55436@pinglin:  jesse | 2007-04-15 11:04:22 -0400
+  0.07
+
+----------------------------------------------------------------------
+r55440 (orig r3127):  jesse | 2007-04-15 11:05:23 -0400
+
+ r55435@pinglin:  jesse | 2007-04-15 11:03:34 -0400
+ * Bumped the version, added a Changelog
+
+----------------------------------------------------------------------
+r55439 (orig r3126):  jesse | 2007-04-15 11:05:18 -0400
+
+ r55434@pinglin:  jesse | 2007-04-15 10:59:48 -0400
+ * todoified new tests for a CPAN release
+
+----------------------------------------------------------------------
+r55438 (orig r3125):  jesse | 2007-04-15 11:05:11 -0400
+
+ r55433@pinglin:  jesse | 2007-04-15 10:59:06 -0400
+ * shut up a warning
+
+----------------------------------------------------------------------
 r54526 (orig r3102):  jesse | 2007-04-06 10:07:35 -0400
 
  r54525@dhcp207:  jesse | 2007-04-06 23:07:11 +0900
