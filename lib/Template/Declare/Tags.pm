@@ -217,7 +217,7 @@ sub install_tag {
 use CGI ();
 our %TAGS = (
     map { $_ => +{} }
-        map {@$_} @CGI::EXPORT_TAGS{qw/:html2 :html3 :html4 :netscape :form/}
+        map {@{$_||[]}} @CGI::EXPORT_TAGS{qw/:html2 :html3 :html4 :netscape :form/}
 );
 install_tag($_) for keys %TAGS;
 

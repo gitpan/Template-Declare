@@ -6,7 +6,7 @@ use Carp;
 package Template::Declare;
 use Template::Declare::Buffer;
 
-$Template::Declare::VERSION = "0.20";
+$Template::Declare::VERSION = "0.21";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
