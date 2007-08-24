@@ -1,3 +1,22 @@
+0.26 - 2007-08-14
+* Refactored Template::Declare::Tags to make the tag sets configurable.
+* Added Template::Declare::TagSet::HTML and Template::Declare::TagSet::XUL,
+  respectively, as well as their common base class, Template::Declare::TagSet.
+  Added Template::Declare::TagSet::HTML and Template::Declare::TagSet::XUL,
+  respectively.
+* Added support for XML namespace:
+   use Template::Declare::Tags 'XUL', 'HTML' => { namespace => 'html' };
+  and
+  ... 'HTML' => { namespace => 'html', package => 'MyHtml' };
+* And we can now say 'use Template::Declare::Tags qw/ HTML XUL /;
+* Added @Template::Declare::Tags::TagSubs which records all the tag subroutines
+  generated on-the-fly, which is necessary for secondary symbol exporting
+  in Jifty::View::Declare::Helpers.
+* Implemented C< use Template::Declare::Tags HTML => { from => 'My::HTML::TagSet' } >.
+* Allow content post-proceessing with a callback.
+* Added a PITFALLS section to T::D's POD.
+* Added a global sub append_attr to provide friendly diagnostics and the infamous "Undefined subroutine &Template::Declare::Tags::append_attr called at ..." is now gone.
+
 ----------------------------------------------------------------------
 r57045 (orig r3286):  jesse | 2007-05-22 15:58:58 -0400
 

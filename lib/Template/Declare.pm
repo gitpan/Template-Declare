@@ -5,11 +5,13 @@ use Carp;
 
 package Template::Declare;
 use Template::Declare::Buffer;
+use Class::ISA;
 
-$Template::Declare::VERSION = "0.21";
+our $VERSION = "0.26";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
+__PACKAGE__->mk_classdata('postprocessor');
 __PACKAGE__->mk_classdata('aliases');
 __PACKAGE__->mk_classdata('alias_metadata');
 __PACKAGE__->mk_classdata('templates');
@@ -18,6 +20,7 @@ __PACKAGE__->mk_classdata('buffer_stack');
 __PACKAGE__->mk_classdata('imported_into');
 
 __PACKAGE__->roots( [] );
+__PACKAGE__->postprocessor( sub { return wantarray ? @_ : $_[0] } );
 __PACKAGE__->aliases(           {} );
 __PACKAGE__->alias_metadata(    {} );
 __PACKAGE__->templates(         {} );
@@ -34,11 +37,11 @@ Template::Declare - Perlish declarative templates
 
 =head1 SYNOPSIS
 
-C<Template::Declare> is a pure-perl declarative HTML templating system. 
+C<Template::Declare> is a pure-perl declarative HTML/XUL/XML templating system.
 
 Yes.  Another one. There are many others like it, but this one is ours.
 
-A few key features and buzzwords
+A few key features and buzzwords:
 
 =over
 
@@ -48,6 +51,8 @@ A few key features and buzzwords
 
 =item No angle brackets
 
+=item "Native" XML namespace and declarator support
+
 =item Mixins
 
 =item Inheritance
@@ -56,45 +61,90 @@ A few key features and buzzwords
 
 =back
 
-
 =head1 USAGE
-
 
 =head2 Basic usage
 
- package MyApp::Templates;
- use Template::Declare::Tags;
- use base 'Template::Declare';
+    ##############################
+    # Basic HTML usage:
+    ###############################
+    package MyApp::Templates;
+    use Template::Declare::Tags; # defaults to 'HTML'
+    use base 'Template::Declare';
 
- template simple => sub {
-    html {
-        head {}
-        body {
-            p {'Hello, world wide web!'};
+    template simple => sub {
+        html {
+            head {}
+            body {
+                p {'Hello, world wide web!'}
             }
         }
- };
+    };
 
- package main;
- use Template::Declare;
- Template::Declare->init( roots => ['MyApp::Templates']);
- print Template::Declare->show( 'simple');
+    package main;
+    use Template::Declare;
+    Template::Declare->init( roots => ['MyApp::Templates']);
+    print Template::Declare->show( 'simple');
 
- # Output:
- #
- #
- # <html>
- #  <head></head>
- #  <body>
- #   <p>Hello, world wide web!
- #   </p>
- #  </body>
- # </html>
+    # Output:
+    #
+    #
+    # <html>
+    #  <head></head>
+    #  <body>
+    #   <p>Hello, world wide web!
+    #   </p>
+    #  </body>
+    # </html>
 
+    ###############################
+    # Let's do XUL!
+    ###############################
+    package MyApp::Templates;
+    use base 'Template::Declare';
+    use Template::Declare::Tags 'XUL';
+
+    template main => sub {
+        xml_decl { 'xml', version => '1.0' };
+        xml_decl { 'xml-stylesheet',  href => "chrome://global/skin/", type => "text/css" };
+        groupbox {
+            caption { attr { label => 'Colors' } }
+            radiogroup {
+              for my $id ( qw< orange violet yellow > ) {
+                radio {
+                    attr {
+                        id => $id,
+                        label => ucfirst($id),
+                        $id eq 'violet' ?
+                            (selected => 'true') : ()
+                    }
+                }
+              } # for
+            }
+        }
+    };
+
+    package main;
+    Template::Declare->init( roots => ['MyApp::Templates']);
+    print Template::Declare->show('main')
+
+    # Output:
+    #
+    # <?xml version="1.0"?>
+    # <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+    #
+    # <groupbox>
+    #  <caption label="Colors" />
+    #  <radiogroup>
+    #   <radio id="orange" label="Orange" />
+    #   <radio id="violet" label="Violet" selected="true" />
+    #   <radio id="yellow" label="Yellow" />
+    #  </radiogroup>
+    # </groupbox>
 
 =head2 A slightly more advanced example
 
-In this example, we'll show off how to set attributes on HTML tags, how to call other templates and how to declare a I<private> template that can't be called directly.
+In this example, we'll show off how to set attributes on HTML tags, how to call other templates and how to declare a I<private> template that can't be called directly. We'll also show passing arguments to templates.
 
  package MyApp::Templates;
  use Template::Declare::Tags;
@@ -107,20 +157,33 @@ In this example, we'll show off how to set attributes on HTML tags, how to call 
         }
  };
 
+ private template 'footer' => sub {
+        my $self = shift;
+        my $time = shift || gmtime;
+ 
+        div { attr { id => "footer"};
+              "Page last generated at $time."
+        }
+ };
+
  template simple => sub {
+    my $self = shift;
+    my $user = shift || 'world wide web';
+
     html {
         show('header');
         body {
             p { attr { class => 'greeting'};
-                'Hello, world wide web!'};
-            }
+                "Hello, $user!"};
+            };
+            show('footer');
         }
  };
 
  package main;
  use Template::Declare;
  Template::Declare->init( roots => ['MyApp::Templates']);
- print Template::Declare->show( 'simple');
+ print Template::Declare->show( 'simple', 'TD user');
 
  # Output:
  #
@@ -131,11 +194,58 @@ In this example, we'll show off how to set attributes on HTML tags, how to call 
  #   <meta generator="This is not your father&#39;s frontpage" />
  #  </head>
  #  <body>
- #   <p class="greeting">Hello, world wide web!
+ #   <p class="greeting">Hello, TD user!
  #   </p>
  #  </body>
+ #  <div id="footer">Page last generated at Mon Jul  2 17:09:34 2007.</div>
  # </html>
- 
+
+For more options, especially the "native" XML namespace
+support and more samples, see L<Template::Declare::Tags>.
+
+=head2 Postprocessing
+
+Sometimes you just want simple syntax for inline elements. The following shows
+how to use a postprocessor to emphasize text _like this_.
+
+ package MyApp::Templates;
+ use Template::Declare::Tags;
+ use base 'Template::Declare';
+
+ template before => sub {
+     h1 {
+         outs "Welcome to ";
+         em { "my"};
+         outs " site. It's ";
+         em { "great"};
+         outs "!";
+     };
+ };
+
+ template after => sub {
+     h1 { "Welcome to _my_ site. It's _great_!"};
+     h2 { outs_raw "This is _not_ emphasized."};
+ };
+
+ package main;
+ use Template::Declare;
+ Template::Declare->init( roots => ['MyApp::Templates'], postprocessor => \&emphasize);
+ print Template::Declare->show( 'before');
+ print Template::Declare->show( 'after');
+
+ sub emphasize {
+     my $text = shift;
+     $text =~ s{_(.+?)_}{<em>$1</em>}g;
+     return $text;
+ }
+
+ # Output:
+ #
+ # <h1>Welcome to 
+ #  <em>my</em> site. It&#39;s 
+ #  <em>great</em>!</h1>
+ # <h1>Welcome to <em>my</em> site. It&#39;s <em>great</em>!</h1>
+ # <h2>This is _not_ emphasized.</h2>
 
 =head2 Multiple template roots (search paths)
 
@@ -153,9 +263,81 @@ This I<class method> initializes the C<Template::Declare> system.
 
 =item roots
 
+=item postprocessor
+
 =back
 
-=cut 
+=head2 PITFALLS
+
+We're reusing the perl interpreter for our templating langauge, but Perl was not designed specifically for our purpose here. Here are some known pitfalls while you're scripting your templates with this module.
+
+=over
+
+=item *
+
+It's quite common to see tag sub calling statements without trailing semi-colons right after C<}>. For instance,
+
+    template foo => {
+        p {
+            a { attr { src => '1.png' } }
+            a { attr { src => '2.png' } }
+            a { attr { src => '3.png' } }
+        }
+    };
+
+is equivalent to
+
+    template foo => {
+        p {
+            a { attr { src => '1.png' } };
+            a { attr { src => '2.png' } };
+            a { attr { src => '3.png' } };
+        };
+    };
+
+But C<xml_decl> is a notable exception. Please always put a trailing semicolon after C<xml_decl { ... }>, or you'll mess up the outputs.
+
+=item *
+
+Another place that requires trailing semicolon is the statements before a Perl looping statement, an if statement, or a C<show> call. For example:
+
+    p { "My links:" };
+    for (@links) {
+        with( src => $_ ), a {}
+    }
+
+The C<;> after C< p { ... } > is required here, or Perl will complaint about syntax errors.
+
+=item *
+
+Literal strings that have tag siblings won't be captured. So the following template
+
+    p { 'hello'; em { 'world' } }
+
+produces
+
+  <p>
+   <em>world</em>
+  </p>
+
+instead of the desired output
+
+  <p>
+   hello
+   <em>world</em>
+  </p>
+
+You can use C<outs> here to solve this problem:
+
+    p { outs 'hello'; em { 'world' } }
+
+Note you can always get rid of the C<outs> crap if the string literal is the only element of the containing block:
+
+   p { 'hello, world!' }
+
+=back
+
+=cut
 
 sub init {
     my $class = shift;
@@ -163,6 +345,10 @@ sub init {
 
     if ( $args{'roots'} ) {
         $class->roots( $args{'roots'} );
+    }
+
+    if ( $args{'postprocessor'} ) {
+        $class->postprocessor( $args{'postprocessor'} );
     }
 
 }
@@ -202,7 +388,7 @@ sub show {
     my $class    = shift;
     my $template = shift;
     local %Template::Declare::Tags::ELEMENT_ID_CACHE = ();
-    return Template::Declare::Tags::show_page($template => \@_);
+    return Template::Declare::Tags::show_page($template => @_);
 }
 
 =head2 alias
@@ -248,11 +434,9 @@ sub import_templates {
     $prepend_path =~ s|/$||;
     $import_from_base->imported_into($prepend_path);
 
-    my @packages;
-    {
-        no strict 'refs';
-        @packages = ( @{ $import_from_base . "::ISA" }, $import_from_base );
-    }
+    my @packages = reverse grep { $_->isa('Template::Declare') }
+        Class::ISA::self_and_super_path( $import_from_base );
+
     foreach my $import_from (@packages) {
         foreach my $template_name ( @{ __PACKAGE__->templates()->{$import_from} } ) {
             my $code = $import_from->_find_template_sub( _template_name_to_sub($template_name));
@@ -377,6 +561,12 @@ sub resolve_template {
     }
 }
 
+sub _dispatch_template {
+    my $class = shift;
+    my $code  = shift;
+    unshift @_, $class;
+    goto $code;
+}
 
 sub _find_template_sub {
     my $self    = shift;
@@ -470,7 +660,7 @@ sub package_variables {
 
 Crawling all over, baby. Be very, very careful. This code is so cutting edge, it can only be fashioned from carbon nanotubes.
 
-Some specific bugs and design flaws that we'd love to see fixed
+Some specific bugs and design flaws that we'd love to see fixed.
 
 =over
 
@@ -484,7 +674,7 @@ C<bug-template-declare@rt.cpan.org>.
 
 =head1 SEE ALSO
 
-L<Jifty>
+L<Template::Declare::Tags>, L<Template::Declare::TagSet>, L<Template::Declare::TagSet::HTML>, L<Template::Declare::TagSet::XUL>, L<Jifty>.
 
 =head1 AUTHOR
 

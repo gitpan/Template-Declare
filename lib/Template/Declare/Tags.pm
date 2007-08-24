@@ -1,27 +1,229 @@
 use 5.006;
 use warnings;
 use strict;
+#use Smart::Comments '####';
+#use Smart::Comments '#####';
 
 package Template::Declare::Tags;
-use Template::Declare;
-use vars qw/@EXPORT @EXPORT_OK $PRIVATE $self/;
-use base 'Exporter';
-use Carp;
 
-@EXPORT
-    = qw( with template private show show_page attr outs outs_raw in_isolation $self under get_current_attr smart_tag_wrapper );
-push @EXPORT, qw(Tr td );   # these two warns the user to use row/cell instead
+our $VERSION = '0.26';
+
+use Template::Declare;
+use vars qw( @EXPORT_OK $PRIVATE $self );
+use base 'Exporter';
+use Carp qw(carp croak);
+use Symbol 'qualify_to_ref';
+
+our @EXPORT
+    = qw( with template private show show_page attr outs
+          outs_raw in_isolation $self under
+          get_current_attr xml_decl
+          smart_tag_wrapper current_template );
+our @TagSubs;
 
 our %ATTRIBUTES       = ();
 our %ELEMENT_ID_CACHE = ();
-our $TAG_NEST_DEPTH            = 0;
+our $TAG_NEST_DEPTH   = 0;
 our @TEMPLATE_STACK;
+
+our $SKIP_XML_ESCAPING = 0;
+
+sub import {
+    ### caller: caller(0)
+    ### @_
+    my $self = shift;
+    my @set_modules;
+    if (!@_) {
+        push @_, 'HTML';
+    }
+    @TagSubs = ();
+    while (@_) {
+        my $lang = shift;
+        my $opts;
+        if (ref $_[0] and ref $_[0] eq 'HASH') {
+            $opts = shift;
+            $opts->{package} ||= $opts->{namespace};
+            ### XXX TODO: carp if the derived package already exists?
+        }
+        $opts->{package} ||= scalar(caller);
+        my $module = $opts->{from} ||
+            "Template::Declare::TagSet::$lang";
+
+        eval "use $module";
+        if ($@) {
+            warn $@;
+            croak "Failed to load tagset module $module";
+        }
+        ##### TagSet options: $opts
+        my $tagset = $module->new($opts);
+        my $tag_list = $tagset->get_tag_list;
+        Template::Declare::Tags::install_tag($_, $tagset)
+            for @$tag_list;
+    }
+   __PACKAGE__->export_to_level(1, $self);
+}
+
+sub _install {
+    my ($override, $package, $subname, $coderef) = @_;
+
+    ###### Installing sub: $subname
+
+    my $name = $package . '::' . $subname;
+    my $slot = qualify_to_ref($name);
+    return if !$override and *$slot{CODE};
+
+    no warnings 'redefine';
+    *$slot = $coderef;
+}
 
 =head1 NAME
 
-Template::Declare::Tags
+Template::Declare::Tags - Build and install XML Tag subroutines for Template::Declare
 
-=head1 METHODS
+=head1 SYNOPSIS
+
+    package MyApp::Templates;
+
+    use base 'Template::Declare';
+    use Template::Declare::Tags 'HTML';
+
+    template main => sub {
+        link {}
+        table {
+            row {
+                cell { "Hello, world!" }
+            }
+        }
+        img { attr { src => 'cat.gif' } }
+    };
+
+    # Produces:
+    # <link />
+    # <table>
+    #  <tr>
+    #   <td>Hello, world!</td>
+    #  </tr>
+    # </table>
+    # <img src="cat.gif" />
+
+    package MyApp::Templates;
+
+    use base 'Template::Declare';
+    use Template::Declare::Tags
+        'XUL', HTML => { namespace => 'html' };
+
+    template main => sub {
+        groupbox {
+            caption { attr { label => 'Colors' } }
+            html::div { html::p { 'howdy!' } }
+            html::br {}
+        }
+    };
+
+    # Produces:
+    #   <groupbox>
+    #    <caption label="Colors" />
+    #    <html:div>
+    #     <html:p>howdy!</html:p>
+    #    </html:div>
+    #    <html:br></html:br>
+    #   </groupbox>
+
+=head1 DESCRIPTION
+
+C<Template::Declare::Tags> is used to generate and install
+subroutines for tags into the user's namespace.
+
+You can specify the tag sets used by providing a list of
+module list in the C<use> statement:
+
+    use Template::Declare::Tags qw/ HTML XUL /;
+
+By default, it uses the tag set provided by L<Template::Declare::TagSet::HTML>. So
+
+    use Template::Declare::Tags;
+
+is equivalent to
+
+    use Template::Declare::Tags 'HTML';
+
+Currently L<Template::Declare> bundles L<Template::Declare::TagSet::HTML>
+for HTML tags and L<Template::Declare::TagSet::XUL> for XUL tags. You can
+certainly specify your own tag set classes, as long
+as they subclass L<Template::Declare::TagSet> and implement
+the corresponding methods (e.g. C<get_tag_list>).
+
+If you implement a custome tag set module named
+C<Template::Declare::TagSet::Foo>.
+
+ use Template::Declare::Tags 'Foo';
+
+If you give the your tag set module a different name, say, C<MyTag::Foo>, then
+you use the C<from> option:
+
+ use Template::Declare::Tags Foo => { from => 'MyTag::Foo' };
+
+Then C<Template::Declare::Tags> will no longer try to load C<Template::Declare::TagSet::Foo>
+and C<MyTag::Foo> will be loaded instead.
+
+XML namespaces are emulated by Perl packages. For
+example, you can embed HTML tags within XUL using the C<html> namespace:
+
+    package MyApp::Templates;
+
+    use base 'Template::Declare';
+    use Template::Declare::Tags
+        'XUL', HTML => { namespace => 'html' };
+
+    template main => sub {
+        groupbox {
+            caption { attr { label => 'Colors' } }
+            html::div { html::p { 'howdy!' } }
+            html::br {}
+        }
+    };
+
+This will give you
+
+       <groupbox>
+        <caption label="Colors" />
+        <html:div>
+         <html:p>howdy!</html:p>
+        </html:div>
+        <html:br></html:br>
+       </groupbox>
+
+Behind the scene, C<Template::Declare::Tags>  will generate a Perl package named C<html> and install HTML tag subroutines into that package. On the other hand, XUL tag subroutines are installed into the current package, namely, C<MyApp::Templates> in the previous example.
+
+There are cases when you want to specify a different Perl package for a perticular XML namespace name. For instance, the C<html> Perl package has already been used for other purposes in your application and you don't want to install subs there and mess things up, then the C<package> option can come to rescue:
+
+    package MyApp::Templates;
+    use base 'Template::Declare';
+    use Template::Declare::Tags
+        'XUL', HTML => {
+            namespace => 'htm',
+            package => 'MyHtml'
+        };
+
+    template main => sub {
+        groupbox {
+            caption { attr { label => 'Colors' } }
+            MyHtml::div { MyHtml::p { 'howdy!' } }
+            MyHtml::br {}
+        }
+    };
+
+This code snippet will still generate something like the following:
+
+    <groupbox>
+     <caption label="Colors" />
+     <htm:div>
+      <htm:p>howdy!</htm:p>
+     </htm:div>
+     <htm:br></htm:br>
+    </groupbox>
+
+=head1 METHODS AND SUBROUTINES
 
 =head2 template TEMPLATENAME => sub { 'Implementation' };
 
@@ -32,7 +234,6 @@ with C<show()>.
 
 (Did you know that you can have characters like ":" and "/" in your Perl
 subroutine names? The easy way to get at them is with "can").
-
 
 =cut
 
@@ -47,14 +248,12 @@ sub template ($$) {
     # template "foo/bar" ==> CallerPkg::_jifty_template_foo/bar;
     my $codesub = sub {
         local $self = shift || $self || $template_class;
-
-        #local $self = $template_class unless $self;
-        &$coderef($self,@_);
+        unshift @_, $self, $coderef;
+        goto $self->can('_dispatch_template');
     };
 
     if (wantarray) {
-
-# We're being called by something like private that doesn't want us to register ourselves
+         # We're being called by something like private that doesn't want us to register ourselves
         return ( $template_class, $template_name, $codesub );
     } else {
 
@@ -106,6 +305,40 @@ sub attr (&;@) {
     return @_;
 }
 
+sub append_attr {
+    die "Subroutine attr failed: $_[0] => '$_[1]'\n\t".
+        "(Perhaps you're using an unknown tag in the outer container?)";
+}
+
+=head2 xml_decl HASH
+
+Emits XML declarators.
+
+For example,
+
+    xml_decl { 'xml', version => '1.0' };
+    xml_decl { 'xml-stylesheet',  href => "chrome://global/skin/", type => "text/css" };
+
+will produce
+
+    <?xml version="1.0"?>
+    <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+=cut
+
+sub xml_decl (&;$) {
+    my $code = shift;
+    my @rv   = $code->();
+    my $name = shift @rv;
+    outs_raw("<?$name");
+    while ( my ( $field, $val ) = splice( @rv, 0, 2 ) ) {
+        # only defined whle in a tag context
+        outs_raw(qq/ $field="$val"/);
+    }
+    outs_raw("?>\n");
+    return @_;
+}
+
 =head2 outs STUFF
 
 C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s output buffer.
@@ -113,7 +346,7 @@ C<outs> HTML-encodes its arguments and appends them to C<Template::Declare>'s ou
 
 =cut
 
-#sub outs { outs_raw( map { _escape_html($_); } grep {defined} @_ ); }
+#sub outs { outs_raw( map { _postprocess($_); } grep {defined} @_ ); }
 
 =head2 outs_raw STUFF
 
@@ -138,7 +371,7 @@ sub _outs {
         my $returned =
             ref($item) eq 'CODE'
             ? $item->()
-            : ( $raw ? $item : _escape_html($item) ) || '';
+            : ( $raw ? $item : _postprocess($item) ) || '';
         my $content = Template::Declare->buffer->data || '';
         Template::Declare->end_buffer_frame;
         Template::Declare->buffer->append( $content . $returned );
@@ -155,46 +388,57 @@ sub _outs {
     return '';
 }
 
-=head2 get_current_attr 
+=head2 get_current_attr
 
 Help! I'm deprecated/
 
-=cut 
+=cut
 
 sub get_current_attr ($) {
     $ATTRIBUTES{ $_[0] };
 }
 
-our %TagAlternateSpelling = (
-    tr   => 'row',
-    td   => 'cell',
-    base =>
-        '',    # Currently 'base' has no alternate spellings; simply ignore it
-);
 
-=head2 install_tag TAGNAME
+=head2 install_tag TAGNAME, TAGSET
 
-Sets up TAGNAME as a tag that can be used in user templates.
-
-Out of the box, C<Template::Declare> installs  the :html2 :html3 :html4 :netscape and
-:form tagsets from CGI.pm.  Patches to make this configurable or use HTML::TagSet would be great.
-
+Sets up TAGNAME as a tag that can be used in user templates. TAGSET is an instance of a subclass for L<Template::Declare::TagSet>.
 
 =cut
 
 sub install_tag {
     my $tag  = lc( $_[0] );
     my $name = $tag;
+    my $tagset = $_[1];
 
-    if ( exists( $TagAlternateSpelling{$tag} ) ) {
-        $name = $TagAlternateSpelling{$tag} or return;
+    ### caller: (caller(0))[0]
+    my $alternative = $tagset->get_alternate_spelling($tag);
+    if ( defined $alternative ) {
+        _install(
+            0, # do not override
+            scalar(caller), $tag,
+            sub (&) {
+                die "$tag {...} is invalid; use $alternative {...} instead.\n";
+            }
+        );
+        #### Exporting place-holder sub: $name
+        # XXX TODO: more checking here
+        if ($name !~ /^(?:base|tr)$/) {
+            push @EXPORT, $name;
+            push @TagSubs, $name;
+        }
+        $name = $alternative or return;
     }
 
-    push @EXPORT, $name;
+    # We don't need this since we directly install
+    # subs into the target package.
+    #push @EXPORT, $name;
+    push @TagSubs, $name;
 
     no strict 'refs';
     no warnings 'redefine';
-    *$name = sub (&;$) {
+    #warn "Installing tag $name..." if $name eq 'base';
+    # XXX TODO: use sub _install to insert subs into the caller's package so as to support XML packages
+    my $code  = sub (&;$) {
         local *__ANON__ = $tag;
         if ( defined wantarray and not wantarray ) {
 
@@ -204,34 +448,34 @@ sub install_tag {
             my $sub   = sub {
                 local $self     = $_self;
                 local *__ANON__ = $tag;
-                _tag(@__);
+                _tag($tagset, @__);
             };
             bless $sub, 'Template::Declare::Tag';
             return $sub;
         } else {
-            _tag(@_);
+            _tag($tagset, @_);
         }
     };
+    ##### package: $tagset->package
+    ##### sub name: $name
+    _install(
+        1, # do override the existing sub with the same name
+        $tagset->package => $name => $code
+    );
 }
 
-use CGI ();
-our %TAGS = (
-    map { $_ => +{} }
-        map {@{$_||[]}} @CGI::EXPORT_TAGS{qw/:html2 :html3 :html4 :netscape :form/}
-);
-install_tag($_) for keys %TAGS;
 
 =head2 with
 
 C<with> is an alternative way to specify attributes for a tag:
 
-    with ( id => 'greeting'), 
+    with ( id => 'greeting', class => 'foo' ),
         p { 'Hello, World wide web' };
 
 
 The standard way to do this is:
 
-    p { attr { id => 'greeting' };
+    p { attr { id => 'greeting', class => 'foo' }
         'Hello, World wide web' };
 
 
@@ -266,7 +510,7 @@ sub with (@) {
           $code->();
       };
   }
-  
+
   # use it
   with ( foo => 'bar', baz => 'bundy' ),
     sample_smart_tag {
@@ -290,7 +534,7 @@ sub smart_tag_wrapper (&) {
     Template::Declare->new_buffer_frame;
 
     my $last = join '',    #
-        map { ref($_) ? $_ : _escape_html($_) }    #
+        map { ref($_) ? $_ : _postprocess($_) }    #
         $coderef->(%ATTRIBUTES);
 
     %ATTRIBUTES = ();                              # prevent leakage
@@ -311,6 +555,7 @@ sub smart_tag_wrapper (&) {
 }
 
 sub _tag {
+    my $tagset    = shift;
     my $code      = shift;
     my $more_code = shift;
     my ($package,   $filename, $line,       $subroutine, $hasargs,
@@ -319,9 +564,13 @@ sub _tag {
         = caller(1);
 
     # This is the hash of attributes filled in by attr() calls in the code;
+    ### Caller: (caller(1))[0]
 
     my $tag = $subroutine;
     $tag =~ s/^.*\:\://;
+    # "html:foo"
+    $tag = $tagset->namespace . ":$tag"
+        if defined $tagset->namespace;
 
     my $buf = "\n" . ( " " x $TAG_NEST_DEPTH ) . "<$tag"
         . join( '',
@@ -337,6 +586,7 @@ sub _tag {
             shift;
 
             my $field = our $AUTOLOAD;
+            ### $field
             $field =~ s/.*:://;
 
             $field =~ s/__/:/g;   # xml__lang  is 'foo' ====> xml:lang="foo"
@@ -352,14 +602,14 @@ sub _tag {
             my $field = shift;
             my $val   = shift;
 
-            $buf .= ' ' . $field . q{="} . _escape_html($val) . q{"};
+            $buf .= ' ' . $field . q{="} . _postprocess($val, 1) . q{"};
             wantarray ? () : '';
         };
 
         local $TAG_NEST_DEPTH = $TAG_NEST_DEPTH + 1;
         %ATTRIBUTES = ();
         Template::Declare->new_buffer_frame;
-        my $last = join '', map { ref($_) ? $_ : _escape_html($_) } $code->();
+        my $last = join '', map { ref($_) ? $_ : _postprocess($_) } $code->();
 
         if ( length( Template::Declare->buffer->data ) ) {
 
@@ -380,16 +630,9 @@ sub _tag {
     if ($had_content) {
         $buf .= "\n" . ( " " x $TAG_NEST_DEPTH ) if ( $buf =~ /\>$/ );
         $buf .= "</$tag>";
-    } elsif ( $tag
-        =~ m{\A(?: base | meta | link | hr | br | param | img | area | input | col )\z}x
-        )
-    {
-
-        # XXX TODO: This should come out of HTML::Tagset
-        # EMPTY tags can close themselves.
+    } elsif ( $tagset->can_combine_empty_tags($tag) ) {
         $buf .= " />";
     } else {
-
         # Otherwise we supply a closing tag.
         $buf .= "></$tag>";
     }
@@ -400,13 +643,10 @@ sub _tag {
         : '';
 }
 
-=head2 show [$template_name or $template_coderef] 
+=head2 show [$template_name or $template_coderef], args
 
-C<show> displays templates. 
-
-Do not call templates with arguments. That's not supported.
-
-XXX TODO: This makes jesse cry. Audrey/cl: sanity check?
+C<show> displays templates. C<args> will be passed directly to the
+template.
 
 C<show> can either be called with a template name or a package/object
 and a template.  (It's both functional and OO.)
@@ -452,34 +692,48 @@ sub show_page {
     my $data = Template::Declare->buffer->data;
     Template::Declare->end_buffer_frame;
     %ELEMENT_ID_CACHE = ();    # We're done. we can clear the cache
-   if (not defined wantarray()) {  
-    
-    Template::Declare->buffer->append($data);
-    return undef;
+    if (not defined wantarray()) {
+        Template::Declare->buffer->append($data);
+        return undef;
      } else {
-    return $data;
-
+        return $data;
      }
 }
 
 sub _resolve_relative_template_path {
     my $template = shift;
 
-    return $template unless ($template =~ '^\.');
-    my $parent = $TEMPLATE_STACK[-1];
-  
-    my @parent = split('/',$parent);
-    my @template = split('/',$template);
+    return $template if ( $template =~ '^\/' );
+    my $parent = current_template();
 
-    if ($template[0] eq '.') {
-        shift @template; # get rid of the . 
-        pop @parent; # Get rid of the parent's tempalte name
-        return (join('/', @parent, @template));
-    }
+    my @parent   = split( '/', $parent );
+    my @template = split( '/', $template );
+
+    @template = grep { $_ !~ /^\.$/} @template; # Get rid of "." entries
+
+    # Let's find out how many levels they want to pop up
+    my @uplevels = grep { /^\.\.$/ } @template;
+    @template = grep { $_ !~ /^\.\.$/ } @template;
 
 
+
+    pop @parent;            # Get rid of the parent's template name
+    pop @parent for @uplevels;
+    return (join( '/', @parent, @template ) );
 
 }
+
+
+=head2 current_template
+
+Returns the absolute path of the current template
+
+=cut
+
+sub current_template {
+    return $TEMPLATE_STACK[-1] || '';
+}
+
 
 sub _show_template {
     my $template        = shift;
@@ -503,6 +757,7 @@ sub _show_template {
         return '';
     }
 
+
     Template::Declare->new_buffer_frame;
     &$callable($self, @$args);
     my $content = Template::Declare->buffer->data;
@@ -510,16 +765,23 @@ sub _show_template {
     Template::Declare->buffer->append($content);
 }
 
-sub _escape_html {
+sub _postprocess {
     my $val = shift;
-    no warnings 'uninitialized';
-    $val =~ s/&/&#38;/g;
-    $val =~ s/</&lt;/g;
-    $val =~ s/>/&gt;/g;
-    $val =~ s/\(/&#40;/g;
-    $val =~ s/\)/&#41;/g;
-    $val =~ s/"/&#34;/g;
-    $val =~ s/'/&#39;/g;
+    my $skip_postprocess = shift;
+
+    if ( ! $SKIP_XML_ESCAPING ) {
+        no warnings 'uninitialized';
+        $val =~ s/&/&#38;/g;
+        $val =~ s/</&lt;/g;
+        $val =~ s/>/&gt;/g;
+        $val =~ s/\(/&#40;/g;
+        $val =~ s/\)/&#41;/g;
+        $val =~ s/"/&#34;/g;
+        $val =~ s/'/&#39;/g;
+    }
+    $val = Template::Declare->postprocessor->($val)
+        if defined($val) && !$skip_postprocess;
+
     return $val;
 }
 
@@ -538,33 +800,53 @@ C<under> is a helper function for the "import" semantic sugar.
 
 sub under ($) { return shift }
 
-=head2 Tr
+=head1 VARIABLES
 
-Template::Declare::Tags uses C<row> and C<cell> for table definitions rather than C<tr> and C<td>. 
-(C<tr> is reserved by the perl interpreter for the operator of that name. We can't override it.)
+=over
 
-=cut
+=item C<< @Template::Declare::Tags::EXPORT >>
 
-sub Tr (&) {
-    die
-        "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
-}
+Holds the names of the static subroutines exported by this class.
+tag subroutines generated from certain tag set, however,
+are not included here.
 
-=head2 td
+=item C<< @Template::Declare::Tags::TagSubs >>
 
-Template::Declare::Tags uses C<row> and C<cell> for table definitions rather than C<tr> and C<td>. 
-(C<tr> is reserved by the perl interpreter for the operator of that name. We can't override it.)
+Contains the names of the tag subroutines generated
+from certain tag set.
 
-=cut
+=item C<< $Template::Declare::Tags::TAG_NEST_DEPTH >>
 
-sub td (&) {
-    die
-        "Tr {...} and td {...} are invalid; use row {...} and cell {...} instead.";
-}
+Controls the indentation of the XML tags in the final outputs. For example, you can temporarily disable a tag's indentation by the following lines of code:
+
+    body {
+        pre {
+          local $Template::Declare::Tags::TAG_NEST_DEPTH = 0;
+          script { attr { src => 'foo.js' } }
+        }
+    }
+
+It generates
+
+    <body>
+     <pre>
+    <script src="foo.js"></script>
+     </pre>
+    </body>
+
+Note that now the C<script> tag has I<no> indentation and we've got what we want ;)
+
+=item C<< $Template::Declare::Tags::SKIP_XML_ESCAPING >>
+
+Makes L<Template::Declare> skip the XML escaping
+postprocessing entirely.
+
+=back
 
 =head1 SEE ALSO
 
-L<Template::Declare>
+L<Template::Declare::TagSet::HTML>,
+L<Template::Declare::TagSet::XUL>, L<Template::Declare>.
 
 =head1 AUTHOR
 
