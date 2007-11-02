@@ -19,7 +19,7 @@ sub get_alternate_spelling {
 }
 
 sub get_tag_list {
-    my @tags = map {@{$_||[]}}
+    my @tags = map { lc($_) } map { @{$_||[]} }
         @CGI::EXPORT_TAGS{
                 qw/:html2 :html3 :html4 :netscape :form/
         };
@@ -41,6 +41,19 @@ Template::Declare::TagSet::HTML - Tag set for HTML
 
 =head1 SYNOPSIS
 
+    # normal use on the user side:
+    use base 'Template::Declare';
+    use Template::Declare::Tags 'HTML';
+
+    template foo => sub {
+        html {
+            body {
+            }
+        }
+    };
+
+    # in Template::Declare::Tags:
+
     use Template::Declare::TagSet::HTML;
     my $tagset = Template::Declare::TagSet::HTML->new(
         { package => 'html', namespace => 'html' }
@@ -56,13 +69,6 @@ Template::Declare::TagSet::HTML - Tag set for HTML
     if ( $tagset->can_combine_empty_tags('img') ) {
         print "<img src='blah.gif' />";
     }
-
-    # normal use
-    package MyApp::Templates;
-    use Template::Declare::Tags 'HTML';
-    use base 'Template::Declare';
-    # ...
-
 
 =head1 INHERITANCE
 
@@ -108,5 +114,5 @@ Agent Zhang E<lt>agentzh@gmail.comE<gt>
 
 =head1 SEE ALSO
 
-L<Template::Declare::TagSet>, L<Template::Declare::TagSet::XUL>, L<Template::Declare::Tags>, L<Template::Declare>.
+L<Template::Declare::TagSet>, L<Template::Declare::TagSet::XUL>, L<Template::Declare::TagSet::RDF>, L<Template::Declare::Tags>, L<Template::Declare>.
 

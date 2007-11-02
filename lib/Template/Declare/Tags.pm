@@ -1,15 +1,15 @@
 use 5.006;
 use warnings;
 use strict;
+#use Smart::Comments;
 #use Smart::Comments '####';
-#use Smart::Comments '#####';
 
 package Template::Declare::Tags;
 
-our $VERSION = '0.26';
+our $VERSION = '0.27';
 
 use Template::Declare;
-use vars qw( @EXPORT_OK $PRIVATE $self );
+use vars qw( @EXPORT_OK $PRIVATE $self @TagSubs );
 use base 'Exporter';
 use Carp qw(carp croak);
 use Symbol 'qualify_to_ref';
@@ -19,7 +19,8 @@ our @EXPORT
           outs_raw in_isolation $self under
           get_current_attr xml_decl
           smart_tag_wrapper current_template );
-our @TagSubs;
+our @TAG_SUB_LIST;
+*TagSubs = \@TAG_SUB_LIST;  # For backward compatibility only
 
 our %ATTRIBUTES       = ();
 our %ELEMENT_ID_CACHE = ();
@@ -29,32 +30,39 @@ our @TEMPLATE_STACK;
 our $SKIP_XML_ESCAPING = 0;
 
 sub import {
-    ### caller: caller(0)
-    ### @_
     my $self = shift;
     my @set_modules;
     if (!@_) {
         push @_, 'HTML';
     }
-    @TagSubs = ();
+    ### @_
+    ### caller: caller()
+
+    # XXX We can't reset @TAG_SUB_LIST here since
+    # use statements always run at BEGIN time.
+    # A better approach may be install such lists
+    # directly into the caller's namespace...
+    #undef @TAG_SUB_LIST;
+
     while (@_) {
         my $lang = shift;
         my $opts;
         if (ref $_[0] and ref $_[0] eq 'HASH') {
             $opts = shift;
             $opts->{package} ||= $opts->{namespace};
-            ### XXX TODO: carp if the derived package already exists?
+            # XXX TODO: carp if the derived package already exists?
         }
         $opts->{package} ||= scalar(caller);
         my $module = $opts->{from} ||
             "Template::Declare::TagSet::$lang";
 
+        ### Loading tag set: $module
         eval "use $module";
         if ($@) {
             warn $@;
             croak "Failed to load tagset module $module";
         }
-        ##### TagSet options: $opts
+        ### TagSet options: $opts
         my $tagset = $module->new($opts);
         my $tag_list = $tagset->get_tag_list;
         Template::Declare::Tags::install_tag($_, $tagset)
@@ -65,8 +73,6 @@ sub import {
 
 sub _install {
     my ($override, $package, $subname, $coderef) = @_;
-
-    ###### Installing sub: $subname
 
     my $name = $package . '::' . $subname;
     my $slot = qualify_to_ref($name);
@@ -147,9 +153,10 @@ is equivalent to
 
     use Template::Declare::Tags 'HTML';
 
-Currently L<Template::Declare> bundles L<Template::Declare::TagSet::HTML>
-for HTML tags and L<Template::Declare::TagSet::XUL> for XUL tags. You can
-certainly specify your own tag set classes, as long
+Currently L<Template::Declare> bundles the following tag sets:
+L<Template::Declare::TagSet::HTML>, L<Template::Declare::TagSet::XUL>, L<Template::Declare::TagSet::RDF>, and L<Template::Declare::TagSet::RDF::EM>.
+
+You can certainly specify your own tag set classes, as long
 as they subclass L<Template::Declare::TagSet> and implement
 the corresponding methods (e.g. C<get_tag_list>).
 
@@ -406,11 +413,10 @@ Sets up TAGNAME as a tag that can be used in user templates. TAGSET is an instan
 =cut
 
 sub install_tag {
-    my $tag  = lc( $_[0] );
+    my $tag  = $_[0]; # we should not do lc($tag) here :)
     my $name = $tag;
     my $tagset = $_[1];
 
-    ### caller: (caller(0))[0]
     my $alternative = $tagset->get_alternate_spelling($tag);
     if ( defined $alternative ) {
         _install(
@@ -420,11 +426,11 @@ sub install_tag {
                 die "$tag {...} is invalid; use $alternative {...} instead.\n";
             }
         );
-        #### Exporting place-holder sub: $name
+        ### Exporting place-holder sub: $name
         # XXX TODO: more checking here
         if ($name !~ /^(?:base|tr)$/) {
             push @EXPORT, $name;
-            push @TagSubs, $name;
+            push @TAG_SUB_LIST, $name;
         }
         $name = $alternative or return;
     }
@@ -432,11 +438,11 @@ sub install_tag {
     # We don't need this since we directly install
     # subs into the target package.
     #push @EXPORT, $name;
-    push @TagSubs, $name;
+    push @TAG_SUB_LIST, $name;
 
     no strict 'refs';
     no warnings 'redefine';
-    #warn "Installing tag $name..." if $name eq 'base';
+    #### Installing tag: $name
     # XXX TODO: use sub _install to insert subs into the caller's package so as to support XML packages
     my $code  = sub (&;$) {
         local *__ANON__ = $tag;
@@ -456,8 +462,6 @@ sub install_tag {
             _tag($tagset, @_);
         }
     };
-    ##### package: $tagset->package
-    ##### sub name: $name
     _install(
         1, # do override the existing sub with the same name
         $tagset->package => $name => $code
@@ -564,7 +568,6 @@ sub _tag {
         = caller(1);
 
     # This is the hash of attributes filled in by attr() calls in the code;
-    ### Caller: (caller(1))[0]
 
     my $tag = $subroutine;
     $tag =~ s/^.*\:\://;
@@ -586,7 +589,6 @@ sub _tag {
             shift;
 
             my $field = our $AUTOLOAD;
-            ### $field
             $field =~ s/.*:://;
 
             $field =~ s/__/:/g;   # xml__lang  is 'foo' ====> xml:lang="foo"
@@ -758,11 +760,8 @@ sub _show_template {
     }
 
 
-    Template::Declare->new_buffer_frame;
     &$callable($self, @$args);
-    my $content = Template::Declare->buffer->data;
-    Template::Declare->end_buffer_frame;
-    Template::Declare->buffer->append($content);
+    return;
 }
 
 sub _postprocess {
@@ -810,10 +809,16 @@ Holds the names of the static subroutines exported by this class.
 tag subroutines generated from certain tag set, however,
 are not included here.
 
-=item C<< @Template::Declare::Tags::TagSubs >>
+=item C<< @Template::Declare::Tags::TAG_SUB_LIST >>
 
 Contains the names of the tag subroutines generated
 from certain tag set.
+
+Note that this array won't get cleared automatically before
+a another C<< use Template::Decalre::Tags >> statement.
+
+C<@Template::Declare::Tags::TagSubs> is aliased to this
+variable for backward-compatibility.
 
 =item C<< $Template::Declare::Tags::TAG_NEST_DEPTH >>
 

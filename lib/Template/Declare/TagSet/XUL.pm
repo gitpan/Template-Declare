@@ -5,8 +5,6 @@ use warnings;
 #use Smart::Comments;
 use base 'Template::Declare::TagSet';
 
-use CGI ();
-
 our %AlternateSpelling = (
     template => 'xul_tempalte',
 );

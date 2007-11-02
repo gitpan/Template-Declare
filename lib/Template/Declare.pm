@@ -7,7 +7,7 @@ package Template::Declare;
 use Template::Declare::Buffer;
 use Class::ISA;
 
-our $VERSION = "0.26";
+our $VERSION = "0.27";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -37,7 +37,7 @@ Template::Declare - Perlish declarative templates
 
 =head1 SYNOPSIS
 
-C<Template::Declare> is a pure-perl declarative HTML/XUL/XML templating system.
+C<Template::Declare> is a pure-perl declarative HTML/XUL/RDF/XML templating system.
 
 Yes.  Another one. There are many others like it, but this one is ours.
 
@@ -45,19 +45,33 @@ A few key features and buzzwords:
 
 =over
 
-=item All templates are 100% pure perl code
+=item *
 
-=item Simple declarative syntax
+All templates are 100% pure perl code
 
-=item No angle brackets
+=item *
 
-=item "Native" XML namespace and declarator support
+Simple declarative syntax
 
-=item Mixins
+=item *
 
-=item Inheritance
+No angle brackets
 
-=item Public and private templates
+=item *
+
+"Native" XML namespace and declarator support
+
+=item *
+
+Mixins
+
+=item *
+
+Inheritance
+
+=item *
+
+Public and private templates
 
 =back
 
@@ -264,76 +278,6 @@ This I<class method> initializes the C<Template::Declare> system.
 =item roots
 
 =item postprocessor
-
-=back
-
-=head2 PITFALLS
-
-We're reusing the perl interpreter for our templating langauge, but Perl was not designed specifically for our purpose here. Here are some known pitfalls while you're scripting your templates with this module.
-
-=over
-
-=item *
-
-It's quite common to see tag sub calling statements without trailing semi-colons right after C<}>. For instance,
-
-    template foo => {
-        p {
-            a { attr { src => '1.png' } }
-            a { attr { src => '2.png' } }
-            a { attr { src => '3.png' } }
-        }
-    };
-
-is equivalent to
-
-    template foo => {
-        p {
-            a { attr { src => '1.png' } };
-            a { attr { src => '2.png' } };
-            a { attr { src => '3.png' } };
-        };
-    };
-
-But C<xml_decl> is a notable exception. Please always put a trailing semicolon after C<xml_decl { ... }>, or you'll mess up the outputs.
-
-=item *
-
-Another place that requires trailing semicolon is the statements before a Perl looping statement, an if statement, or a C<show> call. For example:
-
-    p { "My links:" };
-    for (@links) {
-        with( src => $_ ), a {}
-    }
-
-The C<;> after C< p { ... } > is required here, or Perl will complaint about syntax errors.
-
-=item *
-
-Literal strings that have tag siblings won't be captured. So the following template
-
-    p { 'hello'; em { 'world' } }
-
-produces
-
-  <p>
-   <em>world</em>
-  </p>
-
-instead of the desired output
-
-  <p>
-   hello
-   <em>world</em>
-  </p>
-
-You can use C<outs> here to solve this problem:
-
-    p { outs 'hello'; em { 'world' } }
-
-Note you can always get rid of the C<outs> crap if the string literal is the only element of the containing block:
-
-   p { 'hello, world!' }
 
 =back
 
@@ -656,9 +600,84 @@ sub package_variables {
     return $TEMPLATE_VARS->{$self};
 }
 
+=head1 PITFALLS
+
+We're reusing the perl interpreter for our templating langauge, but Perl was not designed specifically for our purpose here. Here are some known pitfalls while you're scripting your templates with this module.
+
+=over
+
+=item *
+
+It's quite common to see tag sub calling statements without trailing semi-colons right after C<}>. For instance,
+
+    template foo => {
+        p {
+            a { attr { src => '1.png' } }
+            a { attr { src => '2.png' } }
+            a { attr { src => '3.png' } }
+        }
+    };
+
+is equivalent to
+
+    template foo => {
+        p {
+            a { attr { src => '1.png' } };
+            a { attr { src => '2.png' } };
+            a { attr { src => '3.png' } };
+        };
+    };
+
+But C<xml_decl> is a notable exception. Please always put a trailing semicolon after C<xml_decl { ... }>, or you'll mess up the outputs.
+
+=item *
+
+Another place that requires trailing semicolon is the statements before a Perl looping statement, an if statement, or a C<show> call. For example:
+
+    p { "My links:" };
+    for (@links) {
+        with( src => $_ ), a {}
+    }
+
+The C<;> after C< p { ... } > is required here, or Perl will complain about syntax errors.
+
+Another example is
+
+    h1 { 'heading' };  # this trailing semicolon is mandatory
+    show 'tag_tag'
+
+=item *
+
+Literal strings that have tag siblings won't be captured. So the following template
+
+    p { 'hello'; em { 'world' } }
+
+produces
+
+  <p>
+   <em>world</em>
+  </p>
+
+instead of the desired output
+
+  <p>
+   hello
+   <em>world</em>
+  </p>
+
+You can use C<outs> here to solve this problem:
+
+    p { outs 'hello'; em { 'world' } }
+
+Note you can always get rid of the C<outs> crap if the string literal is the only element of the containing block:
+
+   p { 'hello, world!' }
+
+=back
+
 =head1 BUGS
 
-Crawling all over, baby. Be very, very careful. This code is so cutting edge, it can only be fashioned from carbon nanotubes.
+Crawling all over, baby. Be very, very careful. This code is so cutting edge, it can only be fashioned from carbon nanotubes. But we're already using this thing in production :) Make sure you have read the PITFALL section above :)
 
 Some specific bugs and design flaws that we'd love to see fixed.
 

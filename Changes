@@ -1,3 +1,7 @@
+0.27 - Thu Nov  1 22:36:28 EDT 2007
+* Added support for the RDF tag set (T::D::TagSet::RDF).
+* Added support for the Mozilla EM RDF tag set (T::D::TagSet::RDF::EM)
+
 0.26 - 2007-08-14
 * Refactored Template::Declare::Tags to make the tag sets configurable.
 * Added Template::Declare::TagSet::HTML and Template::Declare::TagSet::XUL,
@@ -9,7 +13,7 @@
   and
   ... 'HTML' => { namespace => 'html', package => 'MyHtml' };
 * And we can now say 'use Template::Declare::Tags qw/ HTML XUL /;
-* Added @Template::Declare::Tags::TagSubs which records all the tag subroutines
+* Added @Template::Declare::Tags::TAG_SUB_LIST which records all the tag subroutines
   generated on-the-fly, which is necessary for secondary symbol exporting
   in Jifty::View::Declare::Helpers.
 * Implemented C< use Template::Declare::Tags HTML => { from => 'My::HTML::TagSet' } >.
