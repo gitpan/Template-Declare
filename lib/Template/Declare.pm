@@ -7,7 +7,7 @@ package Template::Declare;
 use Template::Declare::Buffer;
 use Class::ISA;
 
-our $VERSION = "0.27";
+our $VERSION = "0.28";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -18,6 +18,7 @@ __PACKAGE__->mk_classdata('templates');
 __PACKAGE__->mk_classdata('private_templates');
 __PACKAGE__->mk_classdata('buffer_stack');
 __PACKAGE__->mk_classdata('imported_into');
+__PACKAGE__->mk_classdata('around_template');
 
 __PACKAGE__->roots( [] );
 __PACKAGE__->postprocessor( sub { return wantarray ? @_ : $_[0] } );
@@ -26,6 +27,7 @@ __PACKAGE__->alias_metadata(    {} );
 __PACKAGE__->templates(         {} );
 __PACKAGE__->private_templates( {} );
 __PACKAGE__->buffer_stack( [] );
+__PACKAGE__->around_template( undef );
 
 __PACKAGE__->new_buffer_frame();
 
@@ -187,6 +189,7 @@ In this example, we'll show off how to set attributes on HTML tags, how to call 
     html {
         show('header');
         body {
+            img { src is 'hello.jpg' }
             p { attr { class => 'greeting'};
                 "Hello, $user!"};
             };
@@ -208,14 +211,15 @@ In this example, we'll show off how to set attributes on HTML tags, how to call 
  #   <meta generator="This is not your father&#39;s frontpage" />
  #  </head>
  #  <body>
+ #   <img src="hello.jpg" />
  #   <p class="greeting">Hello, TD user!
  #   </p>
  #  </body>
  #  <div id="footer">Page last generated at Mon Jul  2 17:09:34 2007.</div>
  # </html>
 
-For more options, especially the "native" XML namespace
-support and more samples, see L<Template::Declare::Tags>.
+For more options, especially the "native" XML namespace support, 'is' syntax
+for attributes, and more samples, see L<Template::Declare::Tags>.
 
 =head2 Postprocessing
 
@@ -261,11 +265,37 @@ how to use a postprocessor to emphasize text _like this_.
  # <h1>Welcome to <em>my</em> site. It&#39;s <em>great</em>!</h1>
  # <h2>This is _not_ emphasized.</h2>
 
-=head2 Multiple template roots (search paths)
-
 =head2 Inheritance
 
+Templates are really just methods. You can subclass your template packages
+to override some of those methods. See also L<Jifty::View::Declare::CRUD>.
+
+ package MyApp::Templates::GenericItem;
+ use Template::Declare::Tags;
+ use base 'Template::Declare';
+
+ template 'list' => sub {
+     div {
+         show('item', $_) for @_;
+     }
+ };
+ template 'item' => sub {
+     span { shift }
+ };
+
+ package MyApp::Templates::BlogPost;
+ use Template::Declare::Tags;
+ use base 'MyApp::Templates::GenericItem';
+
+ template 'item' => sub {
+     my $post = shift;
+     h1 { $post->title }
+     div { $post->body }
+ };
+
 =head2 Aliasing
+
+=head2 Multiple template roots (search paths)
 
 =head1 METHODS
 
@@ -277,7 +307,26 @@ This I<class method> initializes the C<Template::Declare> system.
 
 =item roots
 
+An array reference of packages to begin looking for templates.
+
 =item postprocessor
+
+A coderef called to postprocess the HTML or XML output of your templates. This
+is to alleviate using Tags for simple text markup.
+
+=item around_template
+
+A coderef called B<instead> of rendering each template. The coderef will
+receive three arguments: a coderef to invoke to render the template, the
+template's path, an arrayref of the arguments to the template, and the coderef
+of the template itself. You can use this for instrumentation. For example:
+
+    Template::Declare->init(around_template => sub {
+        my ($orig, $path, $args, $code) = @_;
+        my $start = time;
+        $orig->();
+        warn "Rendering $path took " . (time - $start) . " seconds.";
+    });
 
 =back
 
@@ -293,6 +342,10 @@ sub init {
 
     if ( $args{'postprocessor'} ) {
         $class->postprocessor( $args{'postprocessor'} );
+    }
+
+    if ( $args{'around_template'} ) {
+        $class->around_template( $args{'around_template'} );
     }
 
 }
@@ -442,15 +495,22 @@ sub _has_aliased_template {
     my $template_name = shift;
     my $show_private  = shift;
 
+    # XXX Should we consider normalizing the path in a more standard way?
+    $template_name = "/$template_name" unless $template_name =~ m{^/};
+    
     foreach my $alias_key ( @{ Template::Declare->aliases->{$package} } ) {
         my $alias_info   = $package->alias_metadata()->{$alias_key};
         my $alias_prefix = $alias_info->{path};
         my $alias_class  = $alias_info->{class};
         my $package_vars = $alias_info->{package_vars};
 
-        $template_name = "/$template_name";
+        $alias_prefix = "/$alias_prefix" unless $alias_prefix =~ m{^/};
 
-        if ( $template_name =~ m{$alias_prefix/(.*)$} ) {
+        # handle the case where we alias something under '/'. the regex appends
+        # a '/' so we need to prevent matching against m{^//};
+        $alias_prefix = '' if $alias_prefix eq '/';
+
+        if ( $template_name =~ m{^$alias_prefix/(.*)$} ) {
             my $dispatch_to_template = $1;
             if (my $coderef = $alias_class->resolve_template( $dispatch_to_template, $show_private)) {
 
@@ -645,6 +705,13 @@ Another example is
 
     h1 { 'heading' };  # this trailing semicolon is mandatory
     show 'tag_tag'
+
+=item *
+
+The C<is> syntax for declaring tag attributes also requires a trailing semicolon, unless it is the only statement in a block. For example,
+
+    p { class is 'item'; id is 'item1'; outs "This is an item" }
+    img { src is 'cat.gif' }
 
 =item *
 

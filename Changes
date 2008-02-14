@@ -1,4 +1,9 @@
-0.27 - Thu Nov  1 22:36:28 EDT 2007
+0.28 - XXX
+* Added the missing dependency Class::ISA to Makefile.PL
+* Added the "canvas" tag to the HTML tagset.
+* Added around_template for instrumentation.
+
+0.27 - 2007-11-02
 * Added support for the RDF tag set (T::D::TagSet::RDF).
 * Added support for the Mozilla EM RDF tag set (T::D::TagSet::RDF::EM)
 

@@ -88,7 +88,7 @@ important missing ones, please let us know :)
 
 =head1 AUTHOR
 
-Agent Zhang E<lt>agentzh@gmail.comE<gt>
+Agent Zhang <agentzh@yahoo.cn>
 
 =head1 SEE ALSO
 

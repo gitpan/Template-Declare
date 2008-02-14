@@ -2,20 +2,26 @@ NAME
     Template::Declare - Perlish declarative templates
 
 SYNOPSIS
-    "Template::Declare" is a pure-perl declarative HTML/XUL/XML templating
-    system.
+    "Template::Declare" is a pure-perl declarative HTML/XUL/RDF/XML
+    templating system.
 
     Yes. Another one. There are many others like it, but this one is ours.
 
     A few key features and buzzwords:
 
-    All templates are 100% pure perl code
-    Simple declarative syntax
-    No angle brackets
-    "Native" XML namespace and declarator support
-    Mixins
-    Inheritance
-    Public and private templates
+    *   All templates are 100% pure perl code
+
+    *   Simple declarative syntax
+
+    *   No angle brackets
+
+    *   "Native" XML namespace and declarator support
+
+    *   Mixins
+
+    *   Inheritance
+
+    *   Public and private templates
 
 USAGE
   Basic usage
@@ -302,8 +308,13 @@ PITFALLS
                 with( src => $_ ), a {}
             }
 
-        The ";" after " p { ... } " is required here, or Perl will complaint
+        The ";" after " p { ... } " is required here, or Perl will complain
         about syntax errors.
+
+        Another example is
+
+            h1 { 'heading' };  # this trailing semicolon is mandatory
+            show 'tag_tag'
 
     *   Literal strings that have tag siblings won't be captured. So the
         following template

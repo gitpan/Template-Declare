@@ -101,6 +101,7 @@ Template::Declare::Tags - Build and install XML Tag subroutines for Template::De
             }
         }
         img { attr { src => 'cat.gif' } }
+        img { src is 'dog.gif' }
     };
 
     # Produces:
@@ -111,6 +112,7 @@ Template::Declare::Tags - Build and install XML Tag subroutines for Template::De
     #  </tr>
     # </table>
     # <img src="cat.gif" />
+    # <img src="dog.gif" />
 
     package MyApp::Templates;
 
@@ -160,7 +162,7 @@ You can certainly specify your own tag set classes, as long
 as they subclass L<Template::Declare::TagSet> and implement
 the corresponding methods (e.g. C<get_tag_list>).
 
-If you implement a custome tag set module named
+If you implement a custom tag set module named
 C<Template::Declare::TagSet::Foo>.
 
  use Template::Declare::Tags 'Foo';
@@ -291,11 +293,18 @@ With C<attr>, you can specify attributes for HTML tags.
 
 Example:
 
- p { attr { class => 'greeting text',
-            id => 'welcome' };
-
+ p {
+    attr { class => 'greeting text',
+           id    => 'welcome' };
     'This is a welcoming paragraph';
+ }
 
+Tag attributes can also be specified by using C<is>, as in
+
+ p {
+    class is 'greeting text';
+    id    is 'welcome';
+    'This is a welcoming paragraph';
  }
 
 
@@ -759,8 +768,18 @@ sub _show_template {
         return '';
     }
 
+    if (my $instrumentation = Template::Declare->around_template) {
+        $instrumentation->(
+            sub { &$callable($self, @$args) },
+            $template,
+            $args,
+            $callable,
+        );
+    }
+    else {
+        &$callable($self, @$args);
+    }
 
-    &$callable($self, @$args);
     return;
 }
 
@@ -855,7 +874,8 @@ L<Template::Declare::TagSet::XUL>, L<Template::Declare>.
 
 =head1 AUTHOR
 
-Jesse Vincent <jesse@bestpractical.com>
+Jesse Vincent <jesse@bestpractical.com>,
+Agent Zhang <agentzh@yahoo.cn>
 
 =head1 COPYRIGHT
 

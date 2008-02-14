@@ -28,6 +28,7 @@ eval q{
 \t\(Perhaps you're using an unknown tag in the outer container\?\)/, 'attr in an invalid tag';
 
 template inline => sub {
+    no warnings 'void';
     html::p { "hello, "; html::em { "world" } }
     html::p { html::em { 'hello' }; 'world' }
 };

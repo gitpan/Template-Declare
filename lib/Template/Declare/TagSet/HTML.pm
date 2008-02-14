@@ -23,7 +23,7 @@ sub get_tag_list {
         @CGI::EXPORT_TAGS{
                 qw/:html2 :html3 :html4 :netscape :form/
         };
-    return [ @tags, qw/form/ ];
+    return [ @tags, qw/form canvas/ ];
 }
 
 sub can_combine_empty_tags {
@@ -110,7 +110,7 @@ For similar reasons, 'base' often gives us trouble too ;)
 
 =head1 AUTHOR
 
-Agent Zhang E<lt>agentzh@gmail.comE<gt>
+Agent Zhang <agentzh@yahoo.cn>
 
 =head1 SEE ALSO
 

@@ -16,6 +16,7 @@ template main => sub {
     }
     img { attr { src => 'cat.gif' } }
     label {}
+    canvas { attr { id => 'foo' } }
 };
 
 package main;
@@ -40,5 +41,6 @@ is $out, <<_EOC_;
 </table>
 <img src="cat.gif" />
 <label></label>
+<canvas id="foo"></canvas>
 _EOC_
 
