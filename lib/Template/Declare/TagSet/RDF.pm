@@ -17,17 +17,6 @@ sub get_tag_list {
     }, (map { "_$_" } 1..10) ];
 }
 
-=begin comment
-
-Tag set for RDF Schema:
-
-    Class    Container    ContainerMembershipProperty
-    Datatype    Literal    Resource
-    comment    domain    isDefinedBy
-    label    member    range
-    seeAlso    subClassOf    subPropertyOf
-
-=cut
 
 1;
 __END__
@@ -94,3 +83,14 @@ Agent Zhang <agentzh@yahoo.cn>
 
 L<Template::Declare::TagSet>, L<Template::Declare::TagSet::HTML>, L<Template::Declare::TagSet::XUL>, L<Template::Declare::Tags>, L<Template::Declare>.
 
+=begin comment
+
+Tag set for RDF Schema:
+
+    Class    Container    ContainerMembershipProperty
+    Datatype    Literal    Resource
+    comment    domain    isDefinedBy
+    label    member    range
+    seeAlso    subClassOf    subPropertyOf
+
+=cut

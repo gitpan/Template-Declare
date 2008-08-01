@@ -7,7 +7,7 @@ package Template::Declare;
 use Template::Declare::Buffer;
 use Class::ISA;
 
-our $VERSION = "0.28";
+our $VERSION = "0.29";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');

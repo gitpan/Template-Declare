@@ -44,6 +44,7 @@ t/postprocessor.t
 t/private.t
 t/relative-aliasing.t
 t/relative-pathing.t
+t/rt-37622.t
 t/self.t
 t/siblings.t
 t/similar-aliases.t
@@ -59,4 +60,5 @@ t/tagset_xul.t
 t/trivial.t
 t/utf8.t
 t/utils.pl
+t/wrappers.t
 t/xss.t

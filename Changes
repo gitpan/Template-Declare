@@ -1,4 +1,9 @@
-0.28 - XXX
+0.29 - 2008-07-01
+* Sugar for defining a tag-like wrapper. Thanks Theory! #37624
+* Don't load all of CGI.pm to get a list of tags. #37630
+* Don't add attrs to the first tag in smart_tag_wrapper. #37622.
+
+0.28 - 2008-02-14
 * Added the missing dependency Class::ISA to Makefile.PL
 * Added the "canvas" tag to the HTML tagset.
 * Added around_template for instrumentation.

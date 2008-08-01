@@ -5,8 +5,6 @@ use warnings;
 use base 'Template::Declare::TagSet';
 #use Smart::Comments;
 
-use CGI ();
-
 our %AlternateSpelling = (
     tr   => 'row',
     td   => 'cell',
@@ -18,12 +16,31 @@ sub get_alternate_spelling {
     $AlternateSpelling{$tag};
 }
 
+# no need to load CGI, really
+#sub get_tag_list {
+#    my @tags = map { lc($_) } map { @{$_||[]} }
+#        @CGI::EXPORT_TAGS{
+#                qw/:html2 :html3 :html4 :netscape :form/
+#        };
+#    return [ @tags, qw/form canvas/ ];
+#}
+
 sub get_tag_list {
-    my @tags = map { lc($_) } map { @{$_||[]} }
-        @CGI::EXPORT_TAGS{
-                qw/:html2 :html3 :html4 :netscape :form/
-        };
-    return [ @tags, qw/form canvas/ ];
+    return [qw(
+        h1 h2 h3 h4 h5 h6 p br hr ol ul li dl dt dd menu code var strong em tt
+        u i b blockquote pre img a address cite samp dfn html head base body
+        link nextid title meta kbd start_html end_html input select option
+        comment charset escapehtml div table caption th td tr tr sup sub
+        strike applet param nobr embed basefont style span layer ilayer font
+        frameset frame script small big area map abbr acronym bdo col colgroup
+        del fieldset iframe ins label legend noframes noscript object optgroup
+        q thead tbody tfoot blink fontsize center textfield textarea filefield
+        password_field hidden checkbox checkbox_group submit reset defaults
+        radio_group popup_menu button autoescape scrolling_list image_button
+        start_form end_form startform endform start_multipart_form
+        end_multipart_form isindex tmpfilename uploadinfo url_encoded
+        multipart form canvas
+    )]
 }
 
 sub can_combine_empty_tags {

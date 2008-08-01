@@ -12,19 +12,19 @@ sub append {
 
     no warnings 'uninitialized';
     $self->data( $self->data . $content );
-}
+};
 
 sub clear {
     my $self = shift;
     $self->data('');
-}
+};
 
 1;
 __END__
 
 =head1 NAME
 
-Template::Declare::Buffer
+Template::Declare::Buffer - manage output buffer
 
 =head1 DESCRIPTION
 

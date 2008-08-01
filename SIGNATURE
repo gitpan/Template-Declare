@@ -14,28 +14,28 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 b54ee3393e208913e115c7b050ebc4094a75e379 Changes
-SHA1 9a3b6e693069c8a37774630300229169f636b71c MANIFEST
+SHA1 7b9e6b7786c4b0b5a2b35de650cccf07a63079e5 Changes
+SHA1 7fbbcd669ac51b68a1242b07080453ac1f6a2080 MANIFEST
 SHA1 6f70228d55d21d8a18d86c6d9acb1a9d5a5504fe MANIFEST.SKIP
-SHA1 bbcafc0b6664f164bc64dfb0ed4cc3228090ba80 META.yml
-SHA1 20b89dacc52223a7346678ccb486a85ffd3b5d7f Makefile.PL
+SHA1 a434408c2bd10bd043d01704a3678b5be3a0630b META.yml
+SHA1 84a7277f9ccd12e4f6d1a619bef2e3721dca45fc Makefile.PL
 SHA1 65da83220e6bf55fec475fe014f90ad37a9f4969 README
-SHA1 78edb89a439463e44c33a72bbee84c54d0dc8aaf inc/Module/Install.pm
-SHA1 8ea4e37df83fd0c1c050be5c8da75545c3828d9b inc/Module/Install/Base.pm
-SHA1 1da6031583c32f0d1ec073b8376102fc51427dcc inc/Module/Install/Can.pm
-SHA1 b779375b90c16af2f31f38a1dd2b5df223c7f2fb inc/Module/Install/Fetch.pm
-SHA1 2054450e1e9c1dd8056362bf4a64ae70d5d71476 inc/Module/Install/Makefile.pm
-SHA1 5d6189b2cad15cf9932a28faafd55130c8247e83 inc/Module/Install/Metadata.pm
-SHA1 02af973fae2ac3531fa6b704574b2b8cb2a08148 inc/Module/Install/Win32.pm
-SHA1 3a2eab96e91cca8d99938cda7791759ae9d97b3a inc/Module/Install/WriteAll.pm
-SHA1 70cacc6fbe8a8b9af995928a115350a01322be2a lib/Template/Declare.pm
-SHA1 14e5dc40531ee4a3a180bf208dafb3aff5935f5a lib/Template/Declare/Buffer.pm
+SHA1 8b836389e4bc170eb8d19b7296b2f4978ac36136 inc/Module/Install.pm
+SHA1 85b32a1d5f215d99f411c3dd6113b537fcd5c57d inc/Module/Install/Base.pm
+SHA1 fde745e180861c7c0ba3ee5a767cafdbdb1d3ebd inc/Module/Install/Can.pm
+SHA1 e259400ceb54c34def9c994f52d7091108ce7ffc inc/Module/Install/Fetch.pm
+SHA1 da42b522e5a7ffbae0ceec900f3635ad9990c565 inc/Module/Install/Makefile.pm
+SHA1 ba005818ee9f97146bfa4e14e53c684e9e446902 inc/Module/Install/Metadata.pm
+SHA1 85e6b1cf5b7ca81bfb469a99389fa947d4b8a08e inc/Module/Install/Win32.pm
+SHA1 d32dff9f0d2f02023ca6d79a48d62fd855916351 inc/Module/Install/WriteAll.pm
+SHA1 3ff3854507c36d88ef8b99e95957dcf5552194eb lib/Template/Declare.pm
+SHA1 6b82d612faa1eb1e632f311a45034e6316626873 lib/Template/Declare/Buffer.pm
 SHA1 5b8295d842ccea0a21661583446344733f668879 lib/Template/Declare/TagSet.pm
-SHA1 4d5dbe5403bcf697b3cf4b0e179821101e67c63c lib/Template/Declare/TagSet/HTML.pm
-SHA1 8e92d7e38a442b5f7989c96312264b127f599700 lib/Template/Declare/TagSet/RDF.pm
+SHA1 a4b1d4e5e70b6bf928ceb7d6eeb73bc6b2d7d7a9 lib/Template/Declare/TagSet/HTML.pm
+SHA1 f95b68b4c50afcd1c66d225556dcfa2b2f18e619 lib/Template/Declare/TagSet/RDF.pm
 SHA1 4899124cdf56c12fcc7ac1a2b3d99910ed5b8bbb lib/Template/Declare/TagSet/RDF/EM.pm
 SHA1 f648877df76723ac24627e926d34d1367fb10f82 lib/Template/Declare/TagSet/XUL.pm
-SHA1 25193488cd8b8de8e63a24152655e7a54c6a6d23 lib/Template/Declare/Tags.pm
+SHA1 3c45c49b1aeea5e3d8f3a5294429d1ebb9a701b3 lib/Template/Declare/Tags.pm
 SHA1 7b2832c140109b23ba669db59e5b357dd1d255ec t/99-pod-coverage.t
 SHA1 bb0da54f2b3f2d7955baa41ee458cb3d1887f475 t/99-pod.t
 SHA1 8de6d59c7ed7c771f9cdc5e2dbaef0c31c7ab439 t/MyTagSet.pm
@@ -59,6 +59,7 @@ SHA1 fb01850a459d3d340bdf688271d14fc55db321e3 t/postprocessor.t
 SHA1 0c00d095bb6ff6fd9d493e8c2ae0f45aa002072b t/private.t
 SHA1 a580daf468f50f09a7828ac57f9d738e6f1f4558 t/relative-aliasing.t
 SHA1 1e57d39c4b40cd19e14efd93179d87b78e8d54e9 t/relative-pathing.t
+SHA1 7a95f27648a60084863ca8db7140f2b601794267 t/rt-37622.t
 SHA1 de23aec78ebc456083d8df85cf11d520bb03544f t/self.t
 SHA1 c09c579c74578fbcb9ede55ed634f7052c35580e t/siblings.t
 SHA1 0183f5c550973540a4f2d275317350664ae94762 t/similar-aliases.t
@@ -71,14 +72,15 @@ SHA1 6eaf0d5fb857c350844f3b70e899d58b8c92ffc8 t/tagset_mix.t
 SHA1 03a32c2247b7a3cc7066c2617605e6391e33cd33 t/tagset_rdf.t
 SHA1 37978589f2dd9465b67ed70cfe7bca806e0f469f t/tagset_rdf_em.t
 SHA1 02301d86757f15e479ca848e7b11c0e625acf304 t/tagset_xul.t
-SHA1 c14430c3789e31fb2e74922bc289cfbcc6ae28ed t/trivial.t
+SHA1 1617716eb384026609ac80f505892af9dfbd3fac t/trivial.t
 SHA1 66f9ab5624ab7e3afd9a6b5940cc93291f560d01 t/utf8.t
 SHA1 888d388aac364fc1c07fc6d5e0ca5be67d41e46d t/utils.pl
+SHA1 0cb68b05e6640bc7dec24dae5a5e0f93c97e7c13 t/wrappers.t
 SHA1 c07bcff77839e622b8b1ecffd492f5ccf0ab359c t/xss.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.7 (Darwin)
 
-iD8DBQFHtIvbsxfQtHhyRPoRAnqTAJ9M7f4LR7zDwSo2CNQ004W3cf2wagCgl3Qg
-Hb++SfaXlNeu+4KjGz8wTbI=
-=vf4n
+iD8DBQFIk4ADsxfQtHhyRPoRAjtbAKCfjXVvDLmrUo7HasPitEA+OldMywCggF2W
+CCIXWJO3FrQ+6f2TRpjuNbY=
+=vJgG
 -----END PGP SIGNATURE-----

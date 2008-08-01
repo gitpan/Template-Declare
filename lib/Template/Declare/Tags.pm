@@ -18,7 +18,7 @@ our @EXPORT
     = qw( with template private show show_page attr outs
           outs_raw in_isolation $self under
           get_current_attr xml_decl
-          smart_tag_wrapper current_template );
+          smart_tag_wrapper current_template wrapper );
 our @TAG_SUB_LIST;
 *TagSubs = \@TAG_SUB_LIST;  # For backward compatibility only
 
@@ -271,6 +271,65 @@ sub template ($$) {
             $codesub );
     }
 
+}
+
+=head2 wrapper WRAPPERNAME => sub { 'Implementation' };
+
+C<wrapper> declares a wrapper subroutine that can be called like a tag sub,
+but can optionally take arguments to be passed to the wrapper sub. For
+example, if you wanted to wrap all of the output of a template in the usual
+HTML headers and footers, you can do something like this:
+
+  package MyApp::Templates;
+  use Template::Declare::Tags;
+  use base 'Template::Declare';
+
+  BEGIN {
+      wrapper wrap => sub {
+          my $code = shift;
+          my %params = @_;
+          html {
+              head { title { outs "Hello, $params{user}!"} };
+              body {
+                  $code->();
+                  div { outs 'This is the end, my friend' };
+              };
+          }
+      };
+  }
+
+  template inner => sub {
+      wrap {
+          h1 { outs "Hello, Jesse, s'up?" };
+      } user => 'Jesse';
+  };
+
+Note how the C<wrap> wrapper function is available for calling after it has
+been declared in a C<BEGIN> block. Also note how you can pass arguments to the
+function after the closing brace (you don't need a comma there!).
+
+The output from the "inner" template will look something like this:
+
+  <html>
+   <head>
+    <title>Hello, Jesse!</title>
+   </head>
+   <body>
+    <h1>Hello, Jesse, s&#39;up?</h1>
+    <div>This is the end, my friend</div>
+   </body>
+  </html>
+
+=cut
+
+sub wrapper ($$) {
+    my $wrapper_name   = shift;
+    my $coderef        = shift;
+    my $template_class = caller;
+
+    # Shove the code ref into the calling class.
+    no strict 'refs';
+    *{"$template_class\::$wrapper_name"} = sub (&;@) { goto $coderef };
 }
 
 =head2 private template TEMPLATENAME => sub { 'Implementation' };
@@ -546,11 +605,13 @@ sub smart_tag_wrapper (&) {
 
     Template::Declare->new_buffer_frame;
 
+    my %attr = %ATTRIBUTES;
+    %ATTRIBUTES = ();                              # prevent leakage
+
     my $last = join '',    #
         map { ref($_) ? $_ : _postprocess($_) }    #
-        $coderef->(%ATTRIBUTES);
+        $coderef->(%attr);
 
-    %ATTRIBUTES = ();                              # prevent leakage
 
     if ( length( Template::Declare->buffer->data ) ) {
 
@@ -753,7 +814,6 @@ sub _show_template {
     local @TEMPLATE_STACK  = @TEMPLATE_STACK;
     $template = _resolve_relative_template_path($template);
     push @TEMPLATE_STACK, $template;
-
 
     my $callable =
         ( ref($template) && $template->isa('Template::Declare::Tag') )

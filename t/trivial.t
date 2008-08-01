@@ -26,7 +26,7 @@ template content => sub {
 };
 
 
-sub  wrapper {
+sub  wrap {
     my ( $title, $coderef) = (@_);
     outs_raw '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
         with ( xmlns      => "http://www.w3.org/1999/xhtml", 'xml:lang' => "en"), 
@@ -45,7 +45,7 @@ sub  wrapper {
 
 template markup => sub {
     my $self = shift;
-    wrapper(
+    wrap(
         'My page!',
         sub {
 
