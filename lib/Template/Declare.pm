@@ -7,7 +7,7 @@ package Template::Declare;
 use Template::Declare::Buffer;
 use Class::ISA;
 
-our $VERSION = "0.29";
+our $VERSION = "0.30";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -740,6 +740,26 @@ Note you can always get rid of the C<outs> crap if the string literal is the onl
 
    p { 'hello, world!' }
 
+=item *
+
+Look out! If the if block is the last block/statement and the condition part is evaluated to be 0:
+
+   p { if ( 0 ) { } }
+
+produces
+
+   <p>0</p>
+
+instead of the more intutive output:
+
+   <p></p>
+
+This's because 0 is the last expression, so it's returned as the value of the whole block, which is used as the content of <p> tag.
+
+To get rid of this, just put an empty string at the end so it returns empty string as the content instead of 0:
+
+   p { if ( 0 ) { } '' }
+
 =back
 
 =head1 BUGS
@@ -766,9 +786,11 @@ L<Template::Declare::Tags>, L<Template::Declare::TagSet>, L<Template::Declare::T
 
 Jesse Vincent <jesse@bestpractical.com>
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
-Copyright 2006-2007 Best Practical Solutions, LLC
+Template::Declare is Copyright 2006-2008 Best Practical Solutions, LLC.
+
+Template::Declare is distributed under the same terms as Perl itself.
 
 =cut
 

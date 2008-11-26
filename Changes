@@ -1,3 +1,7 @@
+0.30 - 2008-11-26
+* Remove the "wrapper" export, its name is too generic and clashes with a lot
+  of existing code. It's a negligible amount of sugar.
+
 0.29 - 2008-07-01
 * Sugar for defining a tag-like wrapper. Thanks Theory! #37624
 * Don't load all of CGI.pm to get a list of tags. #37630

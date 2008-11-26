@@ -6,7 +6,7 @@ use Template::Declare::Tags;
 use base 'Template::Declare';
 
 BEGIN {
-    wrapper wrap => sub {
+    create_wrapper wrap => sub {
         my $code = shift;
         my %params = @_;
         html {

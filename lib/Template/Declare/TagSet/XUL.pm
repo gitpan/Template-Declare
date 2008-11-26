@@ -33,7 +33,7 @@ sub get_tag_list {
   method  observes  overlay  page
   parameter  popup  popupset  progressmeter
   property  radio  radiogroup  rdf
-  resizer  resources  row  rows
+  resizer  resources  richlistbox row  rows
   rule  script  scrollbar  scrollbox
   separator  setter  spacer  splitter
   stack  statusbar  statusbarpanel  stringbundle

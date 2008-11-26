@@ -18,7 +18,7 @@ our @EXPORT
     = qw( with template private show show_page attr outs
           outs_raw in_isolation $self under
           get_current_attr xml_decl
-          smart_tag_wrapper current_template wrapper );
+          smart_tag_wrapper current_template create_wrapper );
 our @TAG_SUB_LIST;
 *TagSubs = \@TAG_SUB_LIST;  # For backward compatibility only
 
@@ -273,10 +273,10 @@ sub template ($$) {
 
 }
 
-=head2 wrapper WRAPPERNAME => sub { 'Implementation' };
+=head2 create_wrapper WRAPPERNAME => sub { 'Implementation' };
 
-C<wrapper> declares a wrapper subroutine that can be called like a tag sub,
-but can optionally take arguments to be passed to the wrapper sub. For
+C<create_wrapper> declares a wrapper subroutine that can be called like a tag
+sub, but can optionally take arguments to be passed to the wrapper sub. For
 example, if you wanted to wrap all of the output of a template in the usual
 HTML headers and footers, you can do something like this:
 
@@ -285,7 +285,7 @@ HTML headers and footers, you can do something like this:
   use base 'Template::Declare';
 
   BEGIN {
-      wrapper wrap => sub {
+      create_wrapper wrap => sub {
           my $code = shift;
           my %params = @_;
           html {
@@ -322,7 +322,7 @@ The output from the "inner" template will look something like this:
 
 =cut
 
-sub wrapper ($$) {
+sub create_wrapper ($$) {
     my $wrapper_name   = shift;
     my $coderef        = shift;
     my $template_class = caller;
