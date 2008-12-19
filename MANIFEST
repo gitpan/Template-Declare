@@ -39,6 +39,8 @@ t/indexhtml.t
 t/instrumentation.t
 t/MyTagSet.pm
 t/namespace.t
+t/nested_show.t
+t/overloaded.t
 t/pitfalls.t
 t/postprocessor.t
 t/private.t

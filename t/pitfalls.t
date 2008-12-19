@@ -61,6 +61,8 @@ is $out, <<_EOC_;
 </html:p>
 _EOC_
 
+TODO: {
+local $TODO = "it can be fixed partially";
 $out = Template::Declare->show('inline') . "\n";
 is $out, <<_EOC_, "'hello, ' is missing";
 
@@ -68,7 +70,6 @@ is $out, <<_EOC_, "'hello, ' is missing";
  <html:em>world</html:em>
 </html:p>
 <html:p>
- <html:em>hello</html:em>
-</html:p>
+ <html:em>hello</html:em>world</html:p>
 _EOC_
-
+}

@@ -1,3 +1,18 @@
+0.31_01 - 2008-12-19
+* INCOMPATIBLE: there were inconsistency in arguments passing.
+  show in TD::Tags could pass arguments into template as array
+  reference depending on a way it's called. Now arguments
+  are always passwed the same way they passed into show.
+
+  This change is only backwards incompatible for those who
+  were using this incorrect behaviour.
+
+* stringify argument in TD::Buffer::append as we can deal with
+  an object with overloaded stringification that puts data into
+  buffer when stringified
+* correctly escape objects with overloaded stringification
+* use less buffers for operations and a few other small optimizations
+
 0.30 - 2008-11-26
 * Remove the "wrapper" export, its name is too generic and clashes with a lot
   of existing code. It's a negligible amount of sugar.

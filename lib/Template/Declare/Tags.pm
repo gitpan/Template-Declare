@@ -437,30 +437,21 @@ sub outs_raw { _outs( 1, @_ ); }
 sub _outs {
     my $raw     = shift;
     my @phrases = (@_);
-    my $buf;
-    Template::Declare->new_buffer_frame;
+
+    my $return_data = (defined wantarray and not wantarray)? 1 : 0;
+    Template::Declare->new_buffer_frame if $return_data;
 
     foreach my $item ( grep {defined} @phrases ) {
 
-        Template::Declare->new_buffer_frame;
-        my $returned =
-            ref($item) eq 'CODE'
+        my $returned = ref($item) eq 'CODE'
             ? $item->()
-            : ( $raw ? $item : _postprocess($item) ) || '';
-        my $content = Template::Declare->buffer->data || '';
-        Template::Declare->end_buffer_frame;
-        Template::Declare->buffer->append( $content . $returned );
+            : $raw
+                ? $item
+                : _postprocess($item);
+        Template::Declare->buffer->append( $returned );
     }
-
-    $buf = Template::Declare->buffer->data || '';
-    Template::Declare->end_buffer_frame;
-    if ( defined wantarray and not wantarray ) {
-        return $buf;
-    } else {
-        Template::Declare->buffer->append($buf);
-
-    }
-    return '';
+    return '' unless $return_data;
+    return Template::Declare->end_buffer_frame->data;
 }
 
 =head2 get_current_attr
@@ -681,7 +672,7 @@ sub _tag {
         local $TAG_NEST_DEPTH = $TAG_NEST_DEPTH + 1;
         %ATTRIBUTES = ();
         Template::Declare->new_buffer_frame;
-        my $last = join '', map { ref($_) ? $_ : _postprocess($_) } $code->();
+        my $last = join '', map { ref($_) && $_->isa('Template::Declare::Tag') ? $_ : _postprocess($_) } $code->();
 
         if ( length( Template::Declare->buffer->data ) ) {
 
@@ -738,15 +729,13 @@ C<Template::Declare> package.
 
 sub show {
     my $template = shift;
-    my $args  = \@_;
-    my $data;
 
     # if we're inside a template, we should show private templates
     if ( caller->isa('Template::Declare') ) {
-       _show_template( $template, 1, $args );
+       _show_template( $template, 1, \@_ );
         return Template::Declare->buffer->data;
     } else {
-        show_page( $template, $args);
+        show_page( $template, @_);
     }
 
 }
@@ -756,20 +745,16 @@ sub show {
 sub show_page {
     my $template        = shift;
     my $args = \@_;
-    my $INSIDE_TEMPLATE = 0;
+
+    my $return_data = defined wantarray();
 
     # if we're inside a template, we should show private templates
-    Template::Declare->new_buffer_frame;
+    Template::Declare->new_buffer_frame if $return_data;
     _show_template( $template, 0, $args );
-    my $data = Template::Declare->buffer->data;
-    Template::Declare->end_buffer_frame;
     %ELEMENT_ID_CACHE = ();    # We're done. we can clear the cache
-    if (not defined wantarray()) {
-        Template::Declare->buffer->append($data);
-        return undef;
-     } else {
-        return $data;
-     }
+    return undef unless $return_data;
+
+    return Template::Declare->end_buffer_frame->data;
 }
 
 sub _resolve_relative_template_path {
@@ -847,6 +832,10 @@ sub _postprocess {
     my $val = shift;
     my $skip_postprocess = shift;
 
+    return $val unless defined $val;
+
+    # stringify in case $val is object with overloaded ""
+    $val = "$val";
     if ( ! $SKIP_XML_ESCAPING ) {
         no warnings 'uninitialized';
         $val =~ s/&/&#38;/g;
@@ -858,7 +847,7 @@ sub _postprocess {
         $val =~ s/'/&#39;/g;
     }
     $val = Template::Declare->postprocessor->($val)
-        if defined($val) && !$skip_postprocess;
+        unless $skip_postprocess;
 
     return $val;
 }
@@ -953,9 +942,7 @@ sub stringify {
     if ( defined wantarray ) {
         Template::Declare->new_buffer_frame;
         my $returned = $self->();
-        my $content  = Template::Declare->buffer->data();
-        Template::Declare->end_buffer_frame;
-        return ( $content . $returned );
+        return (Template::Declare->end_buffer_frame->data . $returned);
     } else {
 
         return $self->();

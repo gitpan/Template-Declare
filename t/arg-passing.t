@@ -31,20 +31,24 @@ template host => sub {
 package main;
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 9;
 use Template::Declare;
+use Template::Declare::Tags;
 Template::Declare->init(roots => ['MyApp::Templates']);
 
 my $out = Template::Declare->show('inner', 'inside');
 like($out, qr/inner: inside/);
+is(show('inner', 'inside'), $out, 'show and TD->show are the same');
 
 $out = Template::Declare->show('outer', 'xyzzy');
 like($out, qr/outer: xyzzy/);
 like($out, qr/inner: XYZZY/);
+is(show('outer', 'xyzzy'), $out, 'show and TD->show are the same');
 
 $out = Template::Declare->show('add', '32', '56');
 is($out, '32 + 56');
+is(show('add', '32', '56'), $out, 'show and TD->show are the same');
 
 $out = Template::Declare->show('host');
 is($out, '3 + 7');
-
+is(show('host'), $out, 'show and TD->show are the same');

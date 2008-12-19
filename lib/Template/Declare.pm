@@ -7,7 +7,7 @@ package Template::Declare;
 use Template::Declare::Buffer;
 use Class::ISA;
 
-our $VERSION = "0.30";
+our $VERSION = "0.31_01";
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('roots');
@@ -361,10 +361,10 @@ sub end_buffer_frame {
 }
 
 sub buffer {
-    unless ( __PACKAGE__->buffer_stack->[0] ) {
-        Carp::confess( __PACKAGE__ . "->buffer called with no buffer" );
-    }
-    return __PACKAGE__->buffer_stack->[0];
+    my $res = __PACKAGE__->buffer_stack->[0];
+    Carp::confess( __PACKAGE__ . "->buffer called with no buffer" )
+        unless $res;
+    return $res;
 }
 
 =head2 show TEMPLATE_NAME

@@ -7,11 +7,11 @@ use base 'Class::Accessor::Fast';
 __PACKAGE__->mk_accessors('data');
 
 sub append {
-    my $self    = shift;
-    my $content = shift;
-
     no warnings 'uninitialized';
-    $self->data( $self->data . $content );
+    # stringify first as it can be overloaded object
+    # that changes our buffer
+    my $append = "$_[1]";
+    $_[0]->data( $_[0]->data . $append );
 };
 
 sub clear {
