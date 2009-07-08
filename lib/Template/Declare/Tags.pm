@@ -503,12 +503,12 @@ sub install_tag {
             my $sub   = sub {
                 local $self     = $_self;
                 local *__ANON__ = $tag;
-                _tag($tagset, @__);
+                _tag($tagset, $tag, @__);
             };
             bless $sub, 'Template::Declare::Tag';
             return $sub;
         } else {
-            _tag($tagset, @_);
+            _tag($tagset, $tag, @_);
         }
     };
     _install(
@@ -584,7 +584,7 @@ sub smart_tag_wrapper (&) {
     my $coderef = shift;
 
     Template::Declare->buffer->append("\n");
-    Template::Declare->buffer->push( from => "T::D tag wrapper");
+    Template::Declare->buffer->push( from => "T::D tag wrapper", private => 1 );
 
     my %attr = %ATTRIBUTES;
     %ATTRIBUTES = ();                              # prevent leakage
@@ -593,29 +593,19 @@ sub smart_tag_wrapper (&) {
         map { ref($_) ? $_ : _postprocess($_) }    #
         $coderef->(%attr);
 
-    my $has_content = Template::Declare->buffer->length;
-    Template::Declare->buffer->pop;
-    Template::Declare->buffer->append( "$last" ) if not $has_content and length $last;
+    my $content = Template::Declare->buffer->pop;
+    $content .= "$last" if not length $content and length $last;
+    Template::Declare->buffer->append( $content ) ;
 
     return '';
 }
 
 sub _tag {
     my $tagset    = shift;
+    my $tag = shift;
     my $code      = shift;
     my $more_code = shift;
-    my ($package,   $filename, $line,       $subroutine, $hasargs,
-        $wantarray, $evaltext, $is_require, $hints,      $bitmask
-        )
-        = caller(1);
-
-    # This is the hash of attributes filled in by attr() calls in the code;
-
-    my $tag = $subroutine;
-    $tag =~ s/^.*\:\://;
-    # "html:foo"
-    $tag = $tagset->namespace . ":$tag"
-        if defined $tagset->namespace;
+    $tag = $tagset->namespace . ":$tag" if defined $tagset->namespace;
 
     Template::Declare->buffer->append(
               "\n" 
@@ -626,6 +616,7 @@ sub _tag {
     );
 
     my $attrs = "";
+    my $last;
     {
         no warnings qw( uninitialized redefine once );
 
@@ -655,10 +646,10 @@ sub _tag {
         local $TAG_NEST_DEPTH = $TAG_NEST_DEPTH + 1;
         %ATTRIBUTES = ();
         Template::Declare->buffer->push( private => 1, from => "T::D tag $tag" );
-        my $last = join '', map { ref($_) && $_->isa('Template::Declare::Tag') ? $_ : _postprocess($_) } $code->();
-        Template::Declare->buffer->append("$last") if not Template::Declare->buffer->length and length $last;
+        $last = join '', map { ref($_) && $_->isa('Template::Declare::Tag') ? $_ : _postprocess($_) } $code->();
     }
     my $content = Template::Declare->buffer->pop;
+    $content .= "$last" if not length $content and length $last;
     Template::Declare->buffer->append($attrs);
 
     if (length $content) {
