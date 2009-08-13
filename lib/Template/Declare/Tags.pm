@@ -6,7 +6,7 @@ use strict;
 
 package Template::Declare::Tags;
 
-our $VERSION = '0.27';
+our $VERSION = '0.40';
 
 use Template::Declare;
 use vars qw( @EXPORT_OK $PRIVATE $self @TagSubs );
@@ -57,10 +57,12 @@ sub import {
             "Template::Declare::TagSet::$lang";
 
         ### Loading tag set: $module
-        eval "use $module";
-        if ($@) {
-            warn $@;
-            croak "Failed to load tagset module $module";
+        if (! $module->can('get_tag_list') ) {
+            eval "use $module";
+            if ($@) {
+                warn $@;
+                croak "Failed to load tagset module $module";
+            }
         }
         ### TagSet options: $opts
         my $tagset = $module->new($opts);
