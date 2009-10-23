@@ -21,7 +21,7 @@ template 'listing' => sub {
     h1 {'ListPlugin::View::listing'};
 };
 
-alias SearchPlugin::View under '/';
+mix SearchPlugin::View under '/';
 
 ##############################################################################
 package MyApp::View;
@@ -31,7 +31,7 @@ use Template::Declare::Tags;
 
 template 'toplevel' => sub {h1{'Toplevel'}};
 
-alias ListPlugin::View under 'plugin/';
+mix ListPlugin::View under '/plugin';
 
 ##############################################################################
 package main;

@@ -1,6 +1,7 @@
 use warnings;
 use strict;
 
+##############################################################################
 package Wifty::UI::aliased_pkg;
 use base qw/Template::Declare/;
 use Template::Declare::Tags;
@@ -15,6 +16,7 @@ template 'local' => sub {
     div { outs( 'This is a template local to ' . __PACKAGE__ ) };
 };
 
+##############################################################################
 package Wifty::UI;
 use base qw/Template::Declare/;
 use Template::Declare::Tags;
@@ -35,9 +37,10 @@ template 'up_level_inside/test'  => sub { show('local/../local') };
 template 'up_level_inside/local' => sub { div { "This is up_level_inside/local" } };
 
 
+##############################################################################
 package main;
 use Template::Declare::Tags;
-Template::Declare->init( roots => ['Wifty::UI'] );
+Template::Declare->init( dispatch_to => ['Wifty::UI'] );
 
 use Test::More tests => 25;
 

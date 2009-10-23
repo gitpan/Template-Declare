@@ -1,4 +1,3 @@
-
 use warnings;
 use strict;
 use utf8;# 'UTF-8';
@@ -21,7 +20,7 @@ template attr => sub { p {{ title is "$str" }} };
 template attr_with_escape => sub { p {{ title is "<$str>" }} };
 
 
-Template::Declare->init(roots => ['Wifty::UI']);
+Template::Declare->init(dispatch_to => ['Wifty::UI']);
 
 1;
 
@@ -47,20 +46,14 @@ Template::Declare->buffer->clear;
 {
     my $simple = (show('tag_outs'));
     ok($simple =~ m{^\s*<p>\s*$str\s*</p>\s*$}s);
-    # diag ($simple);
-    TODO: { local $TODO = "lint doesn't handle unicode sometimes";
-        ok_lint($simple);
-    }
+    ok_lint($simple, 1);
 }
 Template::Declare->buffer->clear;
 
 {
     my $simple = (show('double_tag_outs'));
     ok($simple =~ m{^\s*<p>\s*$str\s*</p>\s*<p>\s*$str\s*</p>\s*$}s);
-    # diag ($simple);
-    TODO: { local $TODO = "lint doesn't handle unicode";
-        ok_lint($simple);
-    }
+    ok_lint($simple, 1);
 }
 Template::Declare->buffer->clear;
 

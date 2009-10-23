@@ -1,5 +1,24 @@
-0.40_01 2009-08-12
+0.40_02 2009-10-23
+* David (Theory) Wheeler spent considerable effort on cleaning up
+  Template-Declare for this release.
+* Reworked all the documentation, neatening things, expanding the "USAGE"
+  section, fixing bugs in the examples, and adding missing docs for various
+  functions and methods.
+* Added "dispatch_to" to replace "roots", which is now deprecated. Note that
+  "dispatch_to" resolves to template classes in the opposite order to "roots".
+  This won't be an issue if you only use a single temlate class.
+* Converted the implementation of "alias" to be the same as that used for
+  "import_templates", which is much more efficient.
+* Added the "into" parameter to "alias" and "import_templates".
+* Added the "setting" syntactical sugar keyword for use with "alias".
+* Renamed "import_templates" to "mix". The former is still around, but is
+  deprecated.
+* Added support for package variables with "mix".
+* Deprecated the undocumented "aliases()" and "alias_metadata()" methods, as
+  they are no longer needed. They're now no-ops that issue warnings. To be
+  removed altogether in a future version.
 
+0.40_01 2009-08-12
 * Support for inline tagset definitions. Thanks to Olivier 'dolmen' Mengué
 	[rt.cpan.org #48642]
 
