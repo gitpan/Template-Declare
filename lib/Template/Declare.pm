@@ -7,7 +7,7 @@ use Template::Declare::Buffer;
 use Class::ISA;
 use String::BufferStack;
 
-our $VERSION = '0.43';
+our $VERSION = '0.44';
 
 use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata('dispatch_to');
@@ -1019,6 +1019,22 @@ Wherein we will eventually provide a brief tutorial on creating custom tag sets.
 
 =end comment
 
+=head2 Indentation configuration
+
+by default, Template::Declare renders a readable XML adding end of lines and a
+one column indentation. This behavior could break a webpage design or add a
+significant amount of chars to your XML output. This could be changed by
+overwriting the default values. so
+
+    $Template::Declare::Tags::TAG_INDENTATION  = 0;
+    $Template::Declare::Tags::EOL              = "";
+    say Template::Declare->show('main');
+
+will render
+
+    <html><body><p>hi</p></body></html>
+
+
 =head1 METHODS
 
 =head2 init
@@ -1744,7 +1760,7 @@ Jesse Vincent <jesse@bestpractical.com>
 
 =head1 LICENSE
 
-Template::Declare is Copyright 2006-2009 Best Practical Solutions, LLC.
+Template::Declare is Copyright 2006-2010 Best Practical Solutions, LLC.
 
 Template::Declare is distributed under the same terms as Perl itself.
 
